@@ -1,155 +1,183 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>運動島會員</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>運動島 Sports Island</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <style>
+    body { background:#F4F5F7 }
+    .btn-line { background:#06C755; color:white }
+  </style>
 </head>
 
-<body class="bg-slate-100">
+<body class="min-h-screen">
 
-<!-- BANNER -->
-<div class="bg-[#06C755] text-white text-center py-4 font-black text-xl">
-  運動島 Sports Island
+<!-- ===== BANNER ===== -->
+<div class="w-full">
+  <img src="https://aiwe.cc/wp-content/uploads/2025/12/3486bc19dc6317e16bf4f1449ec52ae4.jpg"
+       class="w-full object-cover" />
 </div>
 
-<!-- 會員列表 -->
-<div id="view-member" class="p-4">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="font-black text-lg">會員名冊</h2>
-    <button onclick="openAdd()" class="text-[#06C755] font-bold">＋ 新增家人</button>
-  </div>
-  <div id="familyList" class="space-y-3"></div>
+<!-- ===== NAV ===== -->
+<div class="flex justify-around bg-white py-3 border-t fixed bottom-0 w-full">
+  <button onclick="showCourses()">課程</button>
+  <button onclick="showMember()">會員</button>
 </div>
 
-<!-- 新增 / 編輯 -->
-<div id="view-form" class="hidden p-4">
-  <h2 id="formTitle" class="font-black text-lg mb-3">新增家人</h2>
+<!-- ===== CONTENT ===== -->
+<div class="p-4 pb-24">
 
-  <input type="hidden" id="rowIndex">
+  <!-- 課程 -->
+  <section id="courseView">
+    <h2 class="font-bold mb-4">目前課程</h2>
+    <div id="courseList">載入中...</div>
+  </section>
 
-  <input id="name" class="w-full p-3 border rounded mb-2" placeholder="姓名">
-  <input id="phone" class="w-full p-3 border rounded mb-2" placeholder="電話">
+  <!-- 會員清單 -->
+  <section id="memberView" class="hidden">
+    <h2 class="font-bold mb-4">會員名冊</h2>
+    <div id="memberList"></div>
 
-  <select id="gender" class="w-full p-3 border rounded mb-2">
-    <option value="">性別</option>
-    <option>男</option>
-    <option>女</option>
-  </select>
+    <button onclick="openAddMember()"
+      class="btn-line w-full py-3 rounded-xl mt-4 font-bold">
+      ＋ 新增家人
+    </button>
+  </section>
 
-  <input id="birthday" type="date" class="w-full p-3 border rounded mb-2">
+  <!-- 編輯表單 -->
+  <section id="memberFormView" class="hidden">
+    <h2 class="font-bold mb-4" id="formTitle">編輯會員</h2>
 
-  <select id="address" class="w-full p-3 border rounded mb-2">
-    <option>台北市</option><option>新北市</option><option>桃園市</option>
-    <option>台中市</option><option>台南市</option><option>高雄市</option>
-  </select>
+    <input type="hidden" id="rowIndex">
 
-  <select id="relation" class="w-full p-3 border rounded mb-2">
-    <option>本人</option>
-    <option>子女</option>
-    <option>家人</option>
-  </select>
+    <input id="mName" placeholder="姓名" class="w-full p-3 rounded mb-2">
+    <input id="mPhone" placeholder="電話" class="w-full p-3 rounded mb-2">
 
-  <!-- ⭐ 身分別 -->
-  <select id="identity" class="w-full p-3 border rounded mb-4">
-    <option value="一般">一般身分</option>
-    <option value="學生">學生</option>
-  </select>
+    <select id="mGender" class="w-full p-3 rounded mb-2">
+      <option value="">性別</option>
+      <option value="男">男</option>
+      <option value="女">女</option>
+    </select>
 
-  <div class="flex gap-3">
-    <button onclick="save()" class="flex-1 bg-[#06C755] text-white py-3 rounded font-bold">
+    <select id="mIdentity" class="w-full p-3 rounded mb-2">
+      <option value="一般">一般身分</option>
+      <option value="學生">學生</option>
+    </select>
+
+    <select id="mRelation" class="w-full p-3 rounded mb-4">
+      <option value="本人">本人</option>
+      <option value="子女">子女</option>
+      <option value="家人">家人</option>
+    </select>
+
+    <button onclick="saveMember()" class="btn-line w-full py-3 rounded-xl font-bold">
       儲存
     </button>
-    <button onclick="cancel()" class="flex-1 border border-[#06C755] text-[#06C755] py-3 rounded font-bold">
-      取消
+
+    <button onclick="cancelEdit()" class="w-full py-3 mt-2 bg-white rounded-xl">
+      取消返回
     </button>
-  </div>
+  </section>
+
 </div>
 
 <script>
-const API = "https://sport.wetw-net3.workers.dev/";
+const API_URL = "https://sport.wetw-net3.workers.dev/";
 let uid = "";
+let members = [];
 
-async function init(){
+async function init() {
   await liff.init({ liffId:"2008792551-CzPJtVB1" });
-  if(!liff.isLoggedIn()) return liff.login();
+  if(!liff.isLoggedIn()) liff.login();
   uid = (await liff.getProfile()).userId;
-  loadFamily();
+  loadCourses();
+}
+window.onload = init;
+
+/* ===== View Switch ===== */
+function showCourses(){
+  courseView.classList.remove('hidden');
+  memberView.classList.add('hidden');
+  memberFormView.classList.add('hidden');
+}
+function showMember(){
+  courseView.classList.add('hidden');
+  memberView.classList.remove('hidden');
+  memberFormView.classList.add('hidden');
+  loadMembers();
 }
 
-async function loadFamily(){
-  const res = await fetch(API,{
-    method:'POST',
-    body:JSON.stringify({action:'getFamily', userId:uid})
-  }).then(r=>r.json());
-
-  familyList.innerHTML = res.data.map(m=>`
-    <div class="bg-white p-3 rounded flex justify-between">
-      <div>
-        <div class="font-bold">${m.name}</div>
-        <div class="text-xs text-slate-500">${m.relation}｜${m.identity}</div>
-      </div>
-      <button class="text-[#06C755]" onclick='edit(${JSON.stringify(m)})'>編輯</button>
+/* ===== Courses ===== */
+async function loadCourses(){
+  const r = await fetch(API_URL,{method:'POST',body:JSON.stringify({action:'getCourses'})});
+  const j = await r.json();
+  courseList.innerHTML = j.data.map(c=>`
+    <div class="bg-white p-4 rounded mb-3">
+      <div class="font-bold">${c.名稱}</div>
+      <div class="text-sm text-gray-500">$${c.價格}</div>
     </div>
   `).join('');
 }
 
-function openAdd(){
-  viewForm();
+/* ===== Members ===== */
+async function loadMembers(){
+  const r = await fetch(API_URL,{method:'POST',
+    body:JSON.stringify({action:'getFamily',userId:uid})});
+  const j = await r.json();
+  members = j.data;
+  memberList.innerHTML = members.map(m=>`
+    <div class="bg-white p-4 rounded mb-2 flex justify-between">
+      <div>${m.name}</div>
+      <button class="text-green-600"
+        onclick="openEditMember(${m.rowIndex})">編輯</button>
+    </div>
+  `).join('');
 }
 
-function edit(m){
-  viewForm("編輯會員");
+function openEditMember(row){
+  const m = members.find(x=>x.rowIndex===row);
+  memberView.classList.add('hidden');
+  memberFormView.classList.remove('hidden');
+
   rowIndex.value = m.rowIndex;
-  name.value = m.name;
-  phone.value = m.phone;
-  gender.value = m.gender;
-  birthday.value = m.birthday;
-  address.value = m.address;
-  relation.value = m.relation;
-  identity.value = m.identity;
+  mName.value = m.name;
+  mPhone.value = m.phone;
+  mGender.value = m.gender;
+  mRelation.value = m.relation;
+  mIdentity.value = m.identity;
 }
 
-async function save(){
-  const action = rowIndex.value ? 'updateFamily' : 'addFamily';
-  await fetch(API,{
-    method:'POST',
-    body:JSON.stringify({
-      action,
-      rowIndex: rowIndex.value,
-      userId: uid,
-      name: name.value,
-      phone: phone.value,
-      gender: gender.value,
-      birthday: birthday.value,
-      address: address.value,
-      relation: relation.value,
-      identity: identity.value
-    })
-  });
-  cancel();
-  loadFamily();
-}
-
-function cancel(){
-  viewMember();
-}
-
-function viewForm(title="新增家人"){
-  view-member.classList.add('hidden');
-  view-form.classList.remove('hidden');
-  formTitle.innerText = title;
-}
-
-function viewMember(){
-  view-form.classList.add('hidden');
-  view-member.classList.remove('hidden');
+function openAddMember(){
   rowIndex.value="";
+  mName.value="";
+  mPhone.value="";
+  memberView.classList.add('hidden');
+  memberFormView.classList.remove('hidden');
 }
 
-window.onload = init;
+async function saveMember(){
+  const payload={
+    action: rowIndex.value ? 'updateFamily':'addFamily',
+    rowIndex: rowIndex.value,
+    userId: uid,
+    name:mName.value,
+    phone:mPhone.value,
+    gender:mGender.value,
+    relation:mRelation.value,
+    identity:mIdentity.value
+  };
+  await fetch(API_URL,{method:'POST',body:JSON.stringify(payload)});
+  cancelEdit();
+}
+
+function cancelEdit(){
+  memberFormView.classList.add('hidden');
+  showMember();
+}
 </script>
 </body>
 </html>
