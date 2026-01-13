@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>運動島</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+
+<body class="bg-slate-100">
+
+<!-- BANNER -->
+<div class="bg-[#06C755] p-5 text-white text-center font-black text-xl">
+  運動島 Sports Island
+</div>
+
+<!-- 主內容 -->
+<div id="view-course" class="p-4">課程列表載入中…</div>
+
+<div id="view-member" class="hidden p-4">
+  <h2 class="font-black text-lg mb-3">會員名冊</h2>
+  <div id="familyList" class="space-y-3"></div>
+</div>
+
+<div id="view-edit" class="hidden p-4">
+  <h2 class="font-black text-lg mb-3">編輯會員</h2>
+
+  <input type="hidden" id="eRow">
+  <input id="eName" class="w-full p-3 border rounded mb-2" placeholder="姓名">
+  <input id="ePhone" class="w-full p-3 border rounded mb-2" placeholder="電話">
+
+  <select id="eGender" class="w-full p-3 border rounded mb-2">
+    <option>男</option>
+    <option>女</option>
+  </select>
+
+  <input id="eBirthday" type="date" class="w-full p-3 border rounded mb-2">
+
+  <select id="eAddress" class="w-full p-3 border rounded mb-2">
+    <option>台北市</option><option>新北市</option><option>桃園市</option>
+    <option>台中市</option><option>台南市</option><option>高雄市</option>
+  </select>
+
+  <select id="eRelation" class="w-full p-3 border rounded mb-4">
+    <option>本人</option>
+    <option>子女</option>
+  </select>
+
+  <div class="flex gap-3">
+    <button onclick="saveEdit()" class="flex-1 bg-[#06C755] text-white py-3 rounded font-bold">
+      儲存
+    </button>
+    <button onclick="cancelEdit()" class="flex-1 border border-[#06C755] text-[#06C755] py-3 rounded font-bold">
+      取消返回
+    </button>
+  </div>
+</div>
+
+<!-- 底部選單 -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex">
+  <button onclick="showCourse()" class="flex-1 py-3">課程</button>
+  <button onclick="showMember()" class="flex-1 py-3">會員</button>
+</div>
+
+<script>
+const API = "https://sport.wetw-net3.workers.dev/";
+let currentUid = "";
+
+async function init() {
+  await liff.init({ liffId: "2008792551-CzPJtVB1" });
+  if (!liff.isLoggedIn()) return liff.login();
+  currentUid = (await liff.getProfile()).userId;
+  loadCourses();
+}
+
+function showCourse() {
+  view('course');
+  loadCourses();
+}
+
+function showMember() {
+  view('member');
+  loadFamily();
+}
+
+function view(v) {
+  ['course','member','edit'].forEach(x =>
+    document.getElementById('view-'+x).classList.add('hidden')
+  );
+  document.getElementById('view-'+v).classList.remove('hidden');
+}
+
+async function loadFamily() {
+  const res = await fetch(API, {
+    method:'POST',
+    body:JSON.stringify({action:'getFamily', userId:currentUid})
+  }).then(r=>r.json());
+
+  familyList.innerHTML = res.data.map(m=>`
+    <div class="bg-white p-3 rounded flex justify-between">
+      <div>${m.name}</div>
+      <button class="text-[#06C755]" onclick='edit(${JSON.stringify(m)})'>編輯</button>
+    </div>
+  `).join('');
+}
+
+function edit(m){
+  view('edit');
+  eRow.value=m.rowIndex;
+  eName.value=m.name;
+  ePhone.value=m.phone;
+  eGender.value=m.gender;
+  eBirthday.value=m.birthday;
+  eAddress.value=m.address;
+  eRelation.value=m.relation;
+}
+
+async function saveEdit(){
+  await fetch(API,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'updateFamily',
+      rowIndex:eRow.value,
+      name:eName.value,
+      phone:ePhone.value,
+      gender:eGender.value,
+      birthday:eBirthday.value,
+      address:eAddress.value,
+      relation:eRelation.value
+    })
+  });
+  showMember();
+}
+
+function cancelEdit(){ showMember(); }
+
+window.onload = init;
+</script>
+</body>
+</html>
