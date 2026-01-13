@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>運動島後台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --line:#06C755 }
+</style>
+</head>
+
+<body class="bg-[#F4F5F7]">
+
+<div class="flex">
+  <!-- Sidebar -->
+  <aside class="w-56 bg-white h-screen border-r">
+    <div class="p-6 font-black text-[#06C755]">SI ADMIN</div>
+    <button onclick="loadCourses()"
+      class="w-full text-left px-6 py-3 hover:bg-green-50">
+      課程管理
+    </button>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 p-8">
+    <h1 class="text-2xl font-black mb-6">課程規格</h1>
+
+    <button onclick="newCourse()"
+      class="bg-[#06C755] text-white px-6 py-3 rounded-xl font-bold mb-6">
+      ＋ 新增課程
+    </button>
+
+    <table class="w-full bg-white rounded-xl overflow-hidden">
+      <thead class="bg-green-50">
+        <tr>
+          <th class="p-4 text-left">課程</th>
+          <th>類型</th>
+          <th>價格</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="courseBody"></tbody>
+    </table>
+  </main>
+</div>
+
+<script>
+const API = "https://sport.wetw-net3.workers.dev/";
+
+async function loadCourses(){
+  const r = await fetch(API,{
+    method:'POST',
+    body:JSON.stringify({action:'adminGetData'})
+  });
+  const j = await r.json();
+
+  courseBody.innerHTML = j.課程.map(c=>`
+    <tr class="border-t">
+      <td class="p-4 font-bold">${c.name}</td>
+      <td>${c.category}</td>
+      <td>$${c.fullPrice}</td>
+      <td class="text-right pr-4">
+        <button class="text-[#06C755] font-bold">編輯</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function newCourse(){
+  alert('下一步接編輯器');
+}
+
+loadCourses();
+</script>
+</body>
+</html>
