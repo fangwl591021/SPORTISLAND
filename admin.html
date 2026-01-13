@@ -1,177 +1,192 @@
-<!--
-=====================================================
-檔案名稱：admin.html
-版本：V1.0（完整覆蓋版）
-定位：LINE OA 風格後台（課程 / Slot / 設定）
-=====================================================
--->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <title>運動島後台管理中心</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Tailwind（目前仍用 CDN，後續可換正式版） -->
+  <title>運動島｜Slot 編輯器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    :root {
-      --line-green: #06C755;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
     body {
-      font-family: "Noto Sans TC", system-ui, -apple-system;
-      background: #f4f5f7;
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #F4F5F7;
     }
     .btn-line {
-      background: var(--line-green);
+      background: #06C755;
       color: #fff;
       font-weight: 700;
-      border-radius: 10px;
-      padding: 10px 20px;
     }
-    .btn-line-outline {
-      border: 2px solid var(--line-green);
-      color: var(--line-green);
-      font-weight: 700;
-      border-radius: 10px;
-      padding: 8px 18px;
-      background: #fff;
+    .btn-line:hover { background:#05b94d; }
+    .card {
+      background:#fff;
+      border-radius:16px;
+      border:1px solid #E5E7EB;
     }
-    .label-blue { color:#2563eb; font-weight:700; }
-    .label-red { color:#dc2626; font-weight:700; }
+    .label { font-size:13px; font-weight:700; color:#111827; }
+    .hint-blue { color:#2563EB; font-size:12px; font-weight:600; }
+    .hint-red { color:#DC2626; font-size:12px; font-weight:600; }
   </style>
 </head>
 
-<body class="min-h-screen flex">
+<body class="p-6">
 
-  <!-- ================= 側邊欄 ================= -->
-  <aside class="w-60 bg-white border-r">
-    <div class="p-6 text-xl font-black text-[#06C755]">
-      Sports Island
-      <div class="text-xs text-slate-400 font-bold mt-1">Admin Panel</div>
+  <!-- Header -->
+  <div class="max-w-5xl mx-auto mb-8">
+    <h1 class="text-3xl font-black">Slot 編輯器</h1>
+    <p class="text-slate-500 mt-1 font-medium">
+      管理課程每日時段（全日 / 上午 / 下午）
+    </p>
+  </div>
+
+  <!-- Slot Form -->
+  <div class="card max-w-5xl mx-auto p-8 mb-10">
+    <h2 class="text-xl font-black mb-6">新增 / 編輯 Slot</h2>
+
+    <div class="grid grid-cols-2 gap-6">
+      <div>
+        <label class="label">課程 ID</label>
+        <input id="f-courseId" class="w-full mt-2 p-3 border rounded-lg" placeholder="COURSE_xxx" />
+        <p class="hint-blue mt-1">對應 Course_Master.courseId</p>
+      </div>
+
+      <div>
+        <label class="label">日期</label>
+        <input type="date" id="f-date" class="w-full mt-2 p-3 border rounded-lg" />
+      </div>
+
+      <div>
+        <label class="label">時段</label>
+        <select id="f-period" class="w-full mt-2 p-3 border rounded-lg font-bold">
+          <option value="full">全日</option>
+          <option value="am">上午</option>
+          <option value="pm">下午</option>
+        </select>
+        <p class="hint-blue mt-1">對應報名日曆顯示</p>
+      </div>
+
+      <div>
+        <label class="label">名額上限</label>
+        <input type="number" id="f-limit" class="w-full mt-2 p-3 border rounded-lg" value="20" />
+      </div>
+
+      <div>
+        <label class="label">Slot 價格</label>
+        <input type="number" id="f-price" class="w-full mt-2 p-3 border rounded-lg" />
+        <p class="hint-blue mt-1">該日該時段應付金額</p>
+      </div>
+
+      <div>
+        <label class="label">不出席扣除金</label>
+        <input type="number" id="f-absenceDeduct" class="w-full mt-2 p-3 border rounded-lg" />
+        <p class="hint-red mt-1">缺席此時段扣除</p>
+      </div>
+
+      <div>
+        <label class="label">設備租借費</label>
+        <input type="number" id="f-equipFee" class="w-full mt-2 p-3 border rounded-lg" value="0" />
+      </div>
+
+      <div>
+        <label class="label">狀態</label>
+        <select id="f-status" class="w-full mt-2 p-3 border rounded-lg font-bold">
+          <option value="開放">開放</option>
+          <option value="停用">停用</option>
+        </select>
+      </div>
     </div>
 
-    <nav class="flex flex-col gap-2 px-4">
-      <button onclick="switchView('courses')" class="text-left px-4 py-3 rounded-xl hover:bg-green-50 font-bold text-slate-700">
-        📘 課程管理
+    <div class="mt-8 flex justify-end space-x-4">
+      <button onclick="resetForm()" class="px-6 py-3 border rounded-lg font-bold">
+        清除
       </button>
-      <button onclick="switchView('slots')" class="text-left px-4 py-3 rounded-xl hover:bg-green-50 font-bold text-slate-700">
-        📅 Slot 編輯器
+      <button onclick="saveSlot()" class="px-8 py-3 btn-line rounded-lg">
+        儲存 Slot
       </button>
-      <button onclick="switchView('settings')" class="text-left px-4 py-3 rounded-xl hover:bg-green-50 font-bold text-slate-700">
-        ⚙️ 系統設定
-      </button>
-    </nav>
-  </aside>
+    </div>
+  </div>
 
-  <!-- ================= 主內容 ================= -->
-  <main class="flex-1 p-8">
+  <!-- Slot List -->
+  <div class="card max-w-5xl mx-auto p-8">
+    <h2 class="text-xl font-black mb-6">Slot 清單</h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left border-b">
+          <th class="py-3">課程</th>
+          <th>日期</th>
+          <th>時段</th>
+          <th>價格</th>
+          <th>扣除</th>
+          <th>設備</th>
+          <th>名額</th>
+          <th>狀態</th>
+        </tr>
+      </thead>
+      <tbody id="slotTable"></tbody>
+    </table>
+  </div>
 
-    <!-- ===== 課程管理 ===== -->
-    <section id="view-courses">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-black">課程規格管理</h1>
-        <button class="btn-line">＋ 新增課程</button>
-      </div>
+<script>
+const API = location.origin;
 
-      <div class="bg-white rounded-2xl shadow p-6">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left border-b">
-              <th class="py-3">課程名稱</th>
-              <th>類型</th>
-              <th>價格</th>
-              <th>狀態</th>
-              <th class="text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody id="courseTable">
-            <tr>
-              <td colspan="5" class="py-10 text-center text-slate-400 font-bold">
-                尚未載入課程
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+function resetForm() {
+  ['f-courseId','f-date','f-price','f-absenceDeduct','f-equipFee']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-limit').value = 20;
+  document.getElementById('f-period').value = 'full';
+  document.getElementById('f-status').value = '開放';
+}
 
-    <!-- ===== Slot 編輯器 ===== -->
-    <section id="view-slots" class="hidden">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-black">Slot 編輯器</h1>
-        <button class="btn-line">＋ 新增 Slot</button>
-      </div>
+async function saveSlot() {
+  const payload = {
+    action: 'adminSaveSlot',
+    courseId: f-courseId.value,
+    date: f-date.value,
+    period: f-period.value,
+    price: Number(f-price.value),
+    absenceDeduct: Number(f-absenceDeduct.value),
+    equipFee: Number(f-equipFee.value),
+    limit: Number(f-limit.value),
+    status: f-status.value
+  };
 
-      <div class="bg-white rounded-2xl shadow p-6 space-y-6">
-        <div class="grid grid-cols-3 gap-6">
-          <div>
-            <label class="label-blue">課程</label>
-            <select class="w-full mt-2 p-3 border rounded-xl">
-              <option>請選擇課程</option>
-            </select>
-          </div>
+  const res = await fetch(API, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(r=>r.json());
 
-          <div>
-            <label class="label-blue">日期</label>
-            <input type="date" class="w-full mt-2 p-3 border rounded-xl" />
-          </div>
+  if(res.success){
+    alert('Slot 已儲存');
+    loadSlots();
+    resetForm();
+  } else {
+    alert(res.msg || '儲存失敗');
+  }
+}
 
-          <div>
-            <label class="label-blue">時段</label>
-            <select class="w-full mt-2 p-3 border rounded-xl">
-              <option value="full">全日</option>
-              <option value="am">上午</option>
-              <option value="pm">下午</option>
-            </select>
-          </div>
-        </div>
+async function loadSlots(){
+  const res = await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'adminGetSlots'})
+  }).then(r=>r.json());
 
-        <div class="grid grid-cols-3 gap-6">
-          <div>
-            <label class="label-red">不出席扣款</label>
-            <input type="number" class="w-full mt-2 p-3 border rounded-xl" placeholder="例如 300" />
-          </div>
+  const tbody = document.getElementById('slotTable');
+  tbody.innerHTML = (res.data||[]).map(s=>`
+    <tr class="border-b">
+      <td class="py-3 font-mono">${s.courseId}</td>
+      <td>${s.date}</td>
+      <td>${s.period}</td>
+      <td>$${s.price}</td>
+      <td>$${s.absenceDeduct}</td>
+      <td>$${s.equipFee}</td>
+      <td>${s.limit}</td>
+      <td>${s.status}</td>
+    </tr>
+  `).join('');
+}
 
-          <div>
-            <label class="label-blue">設備租借費</label>
-            <input type="number" class="w-full mt-2 p-3 border rounded-xl" placeholder="例如 200" />
-          </div>
-
-          <div>
-            <label class="label-blue">名額上限</label>
-            <input type="number" class="w-full mt-2 p-3 border rounded-xl" placeholder="例如 20" />
-          </div>
-        </div>
-
-        <div class="flex gap-4">
-          <button class="btn-line">儲存 Slot</button>
-          <button class="btn-line-outline">取消返回</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 系統設定 ===== -->
-    <section id="view-settings" class="hidden">
-      <h1 class="text-2xl font-black mb-6">系統設定</h1>
-      <div class="bg-white rounded-2xl shadow p-6">
-        <p class="text-slate-400 font-bold">（此區預留）</p>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ================= Script ================= -->
-  <script>
-    function switchView(v) {
-      document.getElementById('view-courses').classList.add('hidden');
-      document.getElementById('view-slots').classList.add('hidden');
-      document.getElementById('view-settings').classList.add('hidden');
-
-      document.getElementById('view-' + v).classList.remove('hidden');
-    }
-  </script>
-
+window.onload = loadSlots;
+</script>
 </body>
 </html>
