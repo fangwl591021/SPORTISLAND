@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Slot 編輯器</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{--line:#06C755}
+.btn{background:var(--line);color:#fff;font-weight:700}
+</style>
+</head>
+
+<body class="bg-[#F4F5F7] p-6">
+<h1 class="text-2xl font-black mb-4">Slot 編輯器</h1>
+
+<button onclick="newSlot()" class="btn px-4 py-2 rounded mb-4">＋ 新增 Slot</button>
+
+<table class="w-full bg-white rounded-xl text-sm">
+<thead class="bg-[#F0FBF5] text-[#06C755]">
+<tr>
+<th class="p-2">課程</th>
+<th>類型</th>
+<th>日期</th>
+<th>時段</th>
+<th>名額</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody id="slotTable"></tbody>
+</table>
+
+<!-- 編輯區 -->
+<div id="editor" class="hidden bg-white p-6 mt-6 rounded-xl">
+  <h2 class="font-black mb-4">Slot 編輯</h2>
+
+  <input id="slotId" class="border p-2 w-full mb-2" placeholder="slotId">
+
+  <input id="courseId" class="border p-2 w-full mb-2" placeholder="courseId">
+
+  <select id="slotType" class="border p-2 w-full mb-2">
+    <option>單日</option>
+    <option>營隊</option>
+    <option>課後</option>
+  </select>
+
+  <div class="grid grid-cols-2 gap-2 mb-2">
+    <input id="startDate" type="date" class="border p-2">
+    <input id="endDate" type="date" class="border p-2">
+  </div>
+
+  <select id="weekday" class="border p-2 w-full mb-2">
+    <option value="1">週一</option>
+    <option value="2">週二</option>
+    <option value="3">週三</option>
+    <option value="4">週四</option>
+    <option value="5">週五</option>
+    <option value="6">週六</option>
+    <option value="0">週日</option>
+  </select>
+
+  <select id="period" class="border p-2 w-full mb-2">
+    <option>全日</option>
+    <option>上午</option>
+    <option>下午</option>
+    <option>晚上</option>
+  </select>
+
+  <div class="grid grid-cols-2 gap-2 mb-2">
+    <input id="startTime" placeholder="開始時間" class="border p-2">
+    <input id="endTime" placeholder="結束時間" class="border p-2">
+  </div>
+
+  <div class="grid grid-cols-3 gap-2 mb-4">
+    <input id="capacity" placeholder="名額" class="border p-2">
+    <input id="equipFee" placeholder="設備費" class="border p-2">
+    <input id="absenceUnit" placeholder="缺席扣款/日" class="border p-2">
+  </div>
+
+  <div class="flex gap-2">
+    <button onclick="save()" class="btn px-4 py-2 rounded">儲存</button>
+    <button onclick="closeEditor()" class="px-4 py-2 border rounded">取消</button>
+  </div>
+</div>
+
+<script>
+const API = "https://sport.wetw-net3.workers.dev/";
+
+async function load(){
+  const res = await fetch(API,{method:'POST',body:JSON.stringify({action:'getSlots'})}).then(r=>r.json());
+  slotTable.innerHTML = (res.data||[]).map(s=>`
+    <tr class="border-b">
+      <td class="p-2">${s.courseId}</td>
+      <td>${s.slotType}</td>
+      <td>${s.startDate} ~ ${s.endDate}</td>
+      <td>${s.period}</td>
+      <td>${s.capacity}</td>
+      <td><button class="text-[#06C755] font-bold" onclick='edit(${JSON.stringify(s)})'>編輯</button></td>
+    </tr>
+  `).join('');
+}
+
+function newSlot(){
+  editor.classList.remove('hidden');
+  slotId.value = 'S' + Date.now();
+}
+
+function edit(s){
+  editor.classList.remove('hidden');
+  Object.keys(s).forEach(k=>{
+    if(document.getElementById(k)) document.getElementById(k).value = s[k];
+  });
+}
+
+function save(){
+  const data = {
+    action:'saveSlot',
+    slotId:slotId.value,
+    courseId:courseId.value,
+    slotType:slotType.value,
+    startDate:startDate.value,
+    endDate:endDate.value,
+    weekday:weekday.value,
+    period:period.value,
+    startTime:startTime.value,
+    endTime:endTime.value,
+    capacity:capacity.value,
+    equipFee:equipFee.value,
+    absenceUnit:absenceUnit.value
+  };
+  fetch(API,{method:'POST',body:JSON.stringify(data)}).then(()=>{closeEditor();load();});
+}
+
+function closeEditor(){ editor.classList.add('hidden'); }
+load();
+</script>
+</body>
+</html>
