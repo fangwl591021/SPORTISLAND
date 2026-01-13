@@ -1,11 +1,18 @@
+<!--
+=====================================================
+檔案名稱：admin.html
+版本：V1.0（完整覆蓋版）
+定位：LINE OA 風格後台（課程 / Slot / 設定）
+=====================================================
+-->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <title>運動島｜後台管理</title>
+  <title>運動島後台管理中心</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Tailwind CDN（後台可接受） -->
+  <!-- Tailwind（目前仍用 CDN，後續可換正式版） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
@@ -13,173 +20,158 @@
       --line-green: #06C755;
     }
     body {
-      font-family: "Noto Sans TC", system-ui, sans-serif;
-      background: #f5f6f7;
+      font-family: "Noto Sans TC", system-ui, -apple-system;
+      background: #f4f5f7;
     }
+    .btn-line {
+      background: var(--line-green);
+      color: #fff;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 10px 20px;
+    }
+    .btn-line-outline {
+      border: 2px solid var(--line-green);
+      color: var(--line-green);
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 8px 18px;
+      background: #fff;
+    }
+    .label-blue { color:#2563eb; font-weight:700; }
+    .label-red { color:#dc2626; font-weight:700; }
   </style>
 </head>
 
-<body class="min-h-screen">
+<body class="min-h-screen flex">
 
-  <!-- Header -->
-  <header class="bg-white border-b sticky top-0 z-10">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-      <h1 class="text-xl font-black text-slate-800">
-        🛠 運動島 後台管理
-      </h1>
-      <span class="text-sm font-bold text-green-600">
-        LINE OA 管理介面
-      </span>
+  <!-- ================= 側邊欄 ================= -->
+  <aside class="w-60 bg-white border-r">
+    <div class="p-6 text-xl font-black text-[#06C755]">
+      Sports Island
+      <div class="text-xs text-slate-400 font-bold mt-1">Admin Panel</div>
     </div>
-  </header>
 
-  <!-- Tabs -->
-  <nav class="bg-white border-b">
-    <div class="max-w-6xl mx-auto px-6 flex space-x-6">
-      <button class="tab-btn text-green-600 font-black border-b-4 border-green-500 py-3"
-              onclick="showTab('course')">課程管理</button>
-      <button class="tab-btn text-slate-500 font-bold py-3"
-              onclick="showTab('payment')">金流管理</button>
-    </div>
-  </nav>
+    <nav class="flex flex-col gap-2 px-4">
+      <button onclick="switchView('courses')" class="text-left px-4 py-3 rounded-xl hover:bg-green-50 font-bold text-slate-700">
+        📘 課程管理
+      </button>
+      <button onclick="switchView('slots')" class="text-left px-4 py-3 rounded-xl hover:bg-green-50 font-bold text-slate-700">
+        📅 Slot 編輯器
+      </button>
+      <button onclick="switchView('settings')" class="text-left px-4 py-3 rounded-xl hover:bg-green-50 font-bold text-slate-700">
+        ⚙️ 系統設定
+      </button>
+    </nav>
+  </aside>
 
-  <!-- Content -->
-  <main class="max-w-6xl mx-auto px-6 py-8 space-y-12">
+  <!-- ================= 主內容 ================= -->
+  <main class="flex-1 p-8">
 
-    <!-- 課程管理 -->
-    <section id="tab-course">
-      <h2 class="text-lg font-black mb-4">📚 課程列表</h2>
+    <!-- ===== 課程管理 ===== -->
+    <section id="view-courses">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-black">課程規格管理</h1>
+        <button class="btn-line">＋ 新增課程</button>
+      </div>
 
-      <div class="bg-white rounded-xl border overflow-x-auto">
+      <div class="bg-white rounded-2xl shadow p-6">
         <table class="w-full text-sm">
-          <thead class="bg-green-50 text-green-700 font-bold">
-            <tr>
-              <th class="p-3 text-left">課程</th>
-              <th class="p-3">梯次</th>
-              <th class="p-3">期間</th>
-              <th class="p-3">狀態</th>
+          <thead>
+            <tr class="text-left border-b">
+              <th class="py-3">課程名稱</th>
+              <th>類型</th>
+              <th>價格</th>
+              <th>狀態</th>
+              <th class="text-right">操作</th>
             </tr>
           </thead>
-          <tbody id="courseTable"></tbody>
+          <tbody id="courseTable">
+            <tr>
+              <td colspan="5" class="py-10 text-center text-slate-400 font-bold">
+                尚未載入課程
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </section>
 
-    <!-- 金流管理 -->
-    <section id="tab-payment" class="hidden">
-      <h2 class="text-lg font-black mb-4">💰 金流管理</h2>
+    <!-- ===== Slot 編輯器 ===== -->
+    <section id="view-slots" class="hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-black">Slot 編輯器</h1>
+        <button class="btn-line">＋ 新增 Slot</button>
+      </div>
 
-      <div class="bg-white rounded-xl border overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-green-50 text-green-700 font-bold">
-            <tr>
-              <th class="p-3">學員</th>
-              <th class="p-3">課程</th>
-              <th class="p-3">應付</th>
-              <th class="p-3">實付</th>
-              <th class="p-3">狀態</th>
-              <th class="p-3">操作</th>
-            </tr>
-          </thead>
-          <tbody id="paymentTable"></tbody>
-        </table>
+      <div class="bg-white rounded-2xl shadow p-6 space-y-6">
+        <div class="grid grid-cols-3 gap-6">
+          <div>
+            <label class="label-blue">課程</label>
+            <select class="w-full mt-2 p-3 border rounded-xl">
+              <option>請選擇課程</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="label-blue">日期</label>
+            <input type="date" class="w-full mt-2 p-3 border rounded-xl" />
+          </div>
+
+          <div>
+            <label class="label-blue">時段</label>
+            <select class="w-full mt-2 p-3 border rounded-xl">
+              <option value="full">全日</option>
+              <option value="am">上午</option>
+              <option value="pm">下午</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+          <div>
+            <label class="label-red">不出席扣款</label>
+            <input type="number" class="w-full mt-2 p-3 border rounded-xl" placeholder="例如 300" />
+          </div>
+
+          <div>
+            <label class="label-blue">設備租借費</label>
+            <input type="number" class="w-full mt-2 p-3 border rounded-xl" placeholder="例如 200" />
+          </div>
+
+          <div>
+            <label class="label-blue">名額上限</label>
+            <input type="number" class="w-full mt-2 p-3 border rounded-xl" placeholder="例如 20" />
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <button class="btn-line">儲存 Slot</button>
+          <button class="btn-line-outline">取消返回</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 系統設定 ===== -->
+    <section id="view-settings" class="hidden">
+      <h1 class="text-2xl font-black mb-6">系統設定</h1>
+      <div class="bg-white rounded-2xl shadow p-6">
+        <p class="text-slate-400 font-bold">（此區預留）</p>
       </div>
     </section>
 
   </main>
 
-<script>
-const API_URL = window.location.href.split('?')[0];
+  <!-- ================= Script ================= -->
+  <script>
+    function switchView(v) {
+      document.getElementById('view-courses').classList.add('hidden');
+      document.getElementById('view-slots').classList.add('hidden');
+      document.getElementById('view-settings').classList.add('hidden');
 
-/* =============================
- * Tabs
- * ============================= */
-function showTab(tab) {
-  document.getElementById('tab-course').classList.toggle('hidden', tab !== 'course');
-  document.getElementById('tab-payment').classList.toggle('hidden', tab !== 'payment');
-
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('text-green-600','border-green-500','border-b-4','font-black');
-    b.classList.add('text-slate-500','font-bold');
-  });
-
-  event.target.classList.add('text-green-600','border-green-500','border-b-4','font-black');
-}
-
-/* =============================
- * Load Courses
- * ============================= */
-async function loadCourses() {
-  const res = await post({ action: 'adminGetData' });
-  const list = res.課程 || [];
-
-  document.getElementById('courseTable').innerHTML = list.map(c => `
-    <tr class="border-t">
-      <td class="p-3 font-bold">${c.name}</td>
-      <td class="p-3 text-center">${c.batch || '-'}</td>
-      <td class="p-3 text-center">${c.start || ''} ~ ${c.end || ''}</td>
-      <td class="p-3 text-center text-green-600 font-bold">${c.status}</td>
-    </tr>
-  `).join('');
-}
-
-/* =============================
- * Load Payments
- * ============================= */
-async function loadPayments() {
-  const res = await post({ action: 'adminGetPayments' });
-  const list = res.data || [];
-
-  document.getElementById('paymentTable').innerHTML = list.map(p => `
-    <tr class="border-t">
-      <td class="p-3 font-bold">${p.student}</td>
-      <td class="p-3">${p.course}</td>
-      <td class="p-3 text-right text-red-600 font-bold">$${p.payable}</td>
-      <td class="p-3">
-        <input type="number" class="w-24 border rounded px-2 py-1"
-               value="${p.paid}"
-               onchange="updatePayment(${p.row}, this.value, '${p.status}')">
-      </td>
-      <td class="p-3 text-center font-bold">${p.status}</td>
-      <td class="p-3 text-center">
-        <button class="bg-green-500 text-white px-3 py-1 rounded"
-                onclick="updatePayment(${p.row}, ${p.payable}, 'PAID')">
-          標記已付
-        </button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-/* =============================
- * Update Payment
- * ============================= */
-async function updatePayment(row, paid, status) {
-  await post({
-    action: 'adminUpdatePayment',
-    row,
-    paid,
-    status
-  });
-  loadPayments();
-}
-
-/* =============================
- * POST helper
- * ============================= */
-async function post(payload) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  return await res.json();
-}
-
-/* Init */
-loadCourses();
-loadPayments();
-</script>
+      document.getElementById('view-' + v).classList.remove('hidden');
+    }
+  </script>
 
 </body>
 </html>
