@@ -5,7 +5,7 @@
   <title>運動島｜課程報名</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Tailwind（開發用） -->
+  <!-- Tailwind（開發版） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- LIFF -->
@@ -13,12 +13,12 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-    body { font-family:'Noto Sans TC',sans-serif; background:#F4F5F7; }
-    .btn-line{ background:#06C755;color:#fff;font-weight:700 }
-    .btn-line:hover{ background:#05b94d }
-    .card{ background:#fff;border-radius:16px;border:1px solid #E5E7EB }
-    .slot-btn{ border:1px solid #E5E7EB;border-radius:12px;padding:12px;font-weight:700 }
-    .slot-btn.active{ background:#06C755;color:#fff;border-color:#06C755 }
+    body { font-family: 'Noto Sans TC', sans-serif; background:#F4F5F7; }
+    .card { background:#fff; border-radius:16px; border:1px solid #E5E7EB; }
+    .btn-line { background:#06C755; color:#fff; font-weight:700; }
+    .btn-line:hover { background:#05b94d; }
+    .slot-btn { border:1px solid #E5E7EB; border-radius:12px; padding:12px; font-weight:700; }
+    .slot-btn.active { background:#06C755; color:#fff; border-color:#06C755; }
   </style>
 </head>
 
@@ -26,7 +26,7 @@
 
 <!-- Header -->
 <div class="bg-white shadow sticky top-0 z-10">
-  <div class="max-w-md mx-auto p-4 flex items-center justify-between">
+  <div class="max-w-md mx-auto p-4 flex justify-between items-center">
     <h1 class="font-black text-lg">運動島 課程報名</h1>
     <div id="userName" class="text-sm text-slate-500">載入中...</div>
   </div>
@@ -35,31 +35,36 @@
 <!-- Main -->
 <div class="max-w-md mx-auto p-4 space-y-6">
 
+  <!-- 課程 -->
   <div class="card p-5">
-    <h2 class="font-black text-lg mb-4">① 選擇課程</h2>
+    <h2 class="font-black text-lg mb-3">① 選擇課程</h2>
     <select id="courseSelect" class="w-full p-3 border rounded-xl font-bold">
       <option value="">請選擇課程</option>
     </select>
   </div>
 
+  <!-- 日期 -->
   <div class="card p-5 hidden" id="dateCard">
-    <h2 class="font-black text-lg mb-4">② 選擇日期</h2>
+    <h2 class="font-black text-lg mb-3">② 選擇日期</h2>
     <div id="dateList" class="grid grid-cols-3 gap-3"></div>
   </div>
 
+  <!-- Slot -->
   <div class="card p-5 hidden" id="slotCard">
-    <h2 class="font-black text-lg mb-4">③ 選擇時段</h2>
+    <h2 class="font-black text-lg mb-3">③ 選擇時段</h2>
     <div id="slotList" class="space-y-3"></div>
   </div>
 
+  <!-- 金額 -->
   <div class="card p-5 hidden" id="priceCard">
-    <h2 class="font-black text-lg mb-3">④ 應付金額</h2>
+    <h2 class="font-black text-lg mb-2">④ 應付金額</h2>
     <div class="flex justify-between items-center">
       <span class="text-slate-500 font-bold">本次報名</span>
       <span id="priceText" class="text-2xl font-black text-green-600">$0</span>
     </div>
   </div>
 
+  <!-- 送出 -->
   <div class="hidden" id="submitCard">
     <button onclick="submitRegistration()" class="w-full py-4 btn-line rounded-2xl text-lg">
       確認報名（尚未付款）
@@ -70,15 +75,14 @@
 
 <script>
 /* ===============================
- * API（只宣告一次）
+ * 🔒 API 鎖定（最重要）
  * =============================== */
-const API_URL = location.origin;
+const API_URL = "https://sport-island.fangwl591021.workers.dev";
 
 /* ===============================
  * 狀態
  * =============================== */
 let currentUserId = '';
-let currentCourseId = '';
 let slotData = [];
 let selectedSlot = null;
 
@@ -88,9 +92,9 @@ let selectedSlot = null;
 async function initLiff(){
   await liff.init({ liffId:'2008792551-CzPJtVB1' });
   if(!liff.isLoggedIn()){ liff.login(); return; }
-  const p = await liff.getProfile();
-  currentUserId = p.userId;
-  document.getElementById('userName').innerText = p.displayName;
+  const profile = await liff.getProfile();
+  currentUserId = profile.userId;
+  document.getElementById('userName').innerText = profile.displayName;
 }
 
 /* ===============================
@@ -103,8 +107,6 @@ async function loadCourses(){
     body:JSON.stringify({action:'getCourses'})
   }).then(r=>r.json());
 
-  if(!res.success) return alert(res.msg || '課程載入失敗');
-
   const sel = document.getElementById('courseSelect');
   res.data.forEach(c=>{
     const o = document.createElement('option');
@@ -114,18 +116,18 @@ async function loadCourses(){
   });
 }
 
+/* ===============================
+ * 課程 → Slot
+ * =============================== */
 document.getElementById('courseSelect').onchange = async e=>{
   resetUI();
-  currentCourseId = e.target.value;
-  if(!currentCourseId) return;
+  if(!e.target.value) return;
 
   const res = await fetch(API_URL,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'getSlotsByCourse',courseId:currentCourseId})
+    body:JSON.stringify({action:'getSlotsByCourse', courseId:e.target.value})
   }).then(r=>r.json());
-
-  if(!res.success) return alert(res.msg || '讀取時段失敗');
 
   slotData = res.data || [];
   renderDates();
@@ -142,15 +144,15 @@ function renderDates(){
     const b=document.createElement('button');
     b.className='slot-btn';
     b.textContent=d;
-    b.onclick=()=>selectDate(d);
+    b.onclick=()=>selectDate(d,b);
     box.appendChild(b);
   });
   document.getElementById('dateCard').classList.remove('hidden');
 }
 
-function selectDate(d){
+function selectDate(d,btn){
   document.querySelectorAll('#dateList .slot-btn').forEach(b=>b.classList.remove('active'));
-  [...document.querySelectorAll('#dateList .slot-btn')].find(b=>b.textContent===d).classList.add('active');
+  btn.classList.add('active');
   renderSlots(d);
 }
 
@@ -158,32 +160,34 @@ function selectDate(d){
  * Slot
  * =============================== */
 function renderSlots(date){
-  const list=document.getElementById('slotList');
-  list.innerHTML='';
+  const box=document.getElementById('slotList');
+  box.innerHTML='';
   slotData.filter(s=>s.date===date).forEach(s=>{
-    const d=document.createElement('div');
-    d.className='slot-btn';
-    d.innerHTML=`
-      <div class="flex justify-between">
+    const div=document.createElement('div');
+    div.className='slot-btn';
+    div.innerHTML=`
+      <div class="flex justify-between items-center">
         <div>
           <div class="font-black">${periodText(s.period)}</div>
           <div class="text-xs text-slate-500">名額 ${s.limit}｜設備 $${s.equipFee}</div>
         </div>
         <div class="font-black text-green-600">$${s.price}</div>
       </div>`;
-    d.onclick=()=>selectSlot(s,d);
-    list.appendChild(d);
+    div.onclick=()=>selectSlot(s,div);
+    box.appendChild(div);
   });
   document.getElementById('slotCard').classList.remove('hidden');
 }
 
-function periodText(p){ return p==='full'?'全日':p==='am'?'上午':'下午'; }
+function periodText(p){
+  return p==='full'?'全日':p==='am'?'上午':'下午';
+}
 
-function selectSlot(s,el){
+function selectSlot(slot,el){
   document.querySelectorAll('#slotList .slot-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  selectedSlot=s;
-  document.getElementById('priceText').innerText='$'+s.price;
+  selectedSlot = slot;
+  document.getElementById('priceText').innerText='$'+slot.price;
   document.getElementById('priceCard').classList.remove('hidden');
   document.getElementById('submitCard').classList.remove('hidden');
 }
@@ -193,12 +197,13 @@ function selectSlot(s,el){
  * =============================== */
 async function submitRegistration(){
   if(!selectedSlot) return alert('請選擇時段');
+
   const res = await fetch(API_URL,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       action:'register',
-      userId:currentUserId,
+      userId: currentUserId,
       name:'學員',
       slotId:selectedSlot.slotId,
       courseId:selectedSlot.courseId,
@@ -207,16 +212,29 @@ async function submitRegistration(){
     })
   }).then(r=>r.json());
 
-  if(res.success){ alert('報名完成（尚未付款）'); liff.closeWindow(); }
-  else alert(res.msg||'報名失敗');
+  if(res.success){
+    alert('報名完成（尚未付款）');
+    liff.closeWindow();
+  }else{
+    alert(res.msg||'報名失敗');
+  }
 }
 
+/* ===============================
+ * Reset
+ * =============================== */
 function resetUI(){
   ['dateCard','slotCard','priceCard','submitCard']
     .forEach(id=>document.getElementById(id).classList.add('hidden'));
 }
 
-window.onload=async()=>{ await initLiff(); await loadCourses(); };
+/* ===============================
+ * Init
+ * =============================== */
+window.onload=async()=>{
+  await initLiff();
+  await loadCourses();
+};
 </script>
 
 </body>
