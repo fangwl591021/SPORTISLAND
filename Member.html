@@ -2,171 +2,281 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>運動島｜課程報名</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Tailwind（維持你現況） -->
+  <!-- Tailwind（開發版，正式上線再換） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- LIFF -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <style>
-    body { background:#F4F5F7; }
-    .nav-active { color:#06C755; font-weight:700; }
-    .calendar-cell { border:1px solid #E5E7EB; }
-    .cell-full { background:#DCFCE7; color:#166534; }
-    .cell-am { background:#FEF3C7; color:#92400E; }
-    .cell-pm { background:#DBEAFE; color:#1E40AF; }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #F4F5F7;
+    }
+    .btn-line {
+      background:#06C755;
+      color:#fff;
+      font-weight:700;
+    }
+    .btn-line:hover { background:#05b94d; }
+    .card {
+      background:#fff;
+      border-radius:16px;
+      border:1px solid #E5E7EB;
+    }
+    .slot-btn {
+      border:1px solid #E5E7EB;
+      border-radius:12px;
+      padding:12px;
+      font-weight:700;
+    }
+    .slot-btn.active {
+      background:#06C755;
+      color:#fff;
+      border-color:#06C755;
+    }
   </style>
 </head>
 
-<body class="max-w-md mx-auto bg-white min-h-screen relative">
+<body class="pb-24">
 
-<!-- ================= HEADER ================= -->
-<header class="p-4 border-b flex items-center gap-3">
-  <img src="https://aiwe.cc/wp-content/uploads/2025/12/3486bc19dc6317e16bf4f1449ec52ae4.jpg"
-       class="h-8 rounded"/>
-  <h1 class="font-black text-lg">運動島課程報名</h1>
-</header>
-
-<!-- ================= MAIN ================= -->
-<main id="view-course" class="p-4 space-y-4">
-  <div id="courseList" class="space-y-3"></div>
-</main>
-
-<!-- ================= NAV ================= -->
-<nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 text-xs">
-  <button onclick="showCourse()" class="nav-active">課程</button>
-  <button onclick="showMember()">會員</button>
-</nav>
-
-<!-- ================= CALENDAR MODAL ================= -->
-<div id="calendarModal"
-     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-  <div class="bg-white w-[92%] rounded-xl p-4 max-h-[90vh] overflow-y-auto">
-    <h3 class="font-black text-lg mb-2">選擇不出席時段</h3>
-    <p class="text-xs text-blue-600 mb-3">
-      點擊日期切換：全日 → 上午 → 下午 → 出席
-    </p>
-
-    <div id="calendarGrid"
-         class="grid grid-cols-7 gap-1 text-xs mb-4"></div>
-
-    <div class="flex gap-2">
-      <button onclick="closeCalendar()"
-              class="flex-1 border rounded py-2">取消</button>
-      <button onclick="confirmCalendar()"
-              class="flex-1 bg-[#06C755] text-white rounded py-2 font-bold">
-        確認
-      </button>
-    </div>
+<!-- Header -->
+<div class="bg-white shadow sticky top-0 z-10">
+  <div class="max-w-md mx-auto p-4 flex items-center justify-between">
+    <h1 class="font-black text-lg">運動島 課程報名</h1>
+    <div id="userName" class="text-sm text-slate-500">載入中...</div>
   </div>
 </div>
 
-<script>
-/* =====================================================
- * 基本設定
- * ===================================================== */
-const API_URL = "https://sport.wetw-net3.workers.dev/";
-let activeCourse = null;
-let calendarData = [];
+<!-- Main -->
+<div class="max-w-md mx-auto p-4 space-y-6">
 
-/* =====================================================
- * 初始化
- * ===================================================== */
-async function init() {
-  await liff.init({ liffId: "2008792551-CzPJtVB1" });
-  if (!liff.isLoggedIn()) return liff.login();
-  loadCourses();
+  <!-- 課程選擇 -->
+  <div class="card p-5">
+    <h2 class="font-black text-lg mb-4">① 選擇課程</h2>
+    <select id="courseSelect" class="w-full p-3 border rounded-xl font-bold">
+      <option value="">請選擇課程</option>
+    </select>
+  </div>
+
+  <!-- 日曆（Slot 日期） -->
+  <div class="card p-5 hidden" id="dateCard">
+    <h2 class="font-black text-lg mb-4">② 選擇日期</h2>
+    <div id="dateList" class="grid grid-cols-3 gap-3"></div>
+  </div>
+
+  <!-- Slot（全日 / 上午 / 下午） -->
+  <div class="card p-5 hidden" id="slotCard">
+    <h2 class="font-black text-lg mb-4">③ 選擇時段</h2>
+    <div id="slotList" class="space-y-3"></div>
+  </div>
+
+  <!-- 金額 -->
+  <div class="card p-5 hidden" id="priceCard">
+    <h2 class="font-black text-lg mb-3">④ 應付金額</h2>
+    <div class="flex justify-between items-center">
+      <span class="text-slate-500 font-bold">本次報名</span>
+      <span id="priceText" class="text-2xl font-black text-green-600">$0</span>
+    </div>
+  </div>
+
+  <!-- 送出 -->
+  <div class="hidden" id="submitCard">
+    <button onclick="submitRegistration()"
+      class="w-full py-4 btn-line rounded-2xl text-lg">
+      確認報名（尚未付款）
+    </button>
+  </div>
+
+</div>
+
+<script>
+/* ===============================
+ * 基本設定
+ * =============================== */
+const API = location.origin;
+let currentUserId = '';
+let currentCourseId = '';
+let slotData = [];
+let selectedSlot = null;
+
+/* ===============================
+ * LIFF 初始化
+ * =============================== */
+async function initLiff() {
+  await liff.init({ liffId: '2008792551-CzPJtVB1' });
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
+  const profile = await liff.getProfile();
+  currentUserId = profile.userId;
+  document.getElementById('userName').innerText = profile.displayName;
 }
 
-/* =====================================================
- * 課程列表
- * ===================================================== */
+/* ===============================
+ * 載入課程
+ * =============================== */
 async function loadCourses() {
-  const res = await fetch(API_URL, {
+  const res = await fetch(API, {
     method:'POST',
-    body:JSON.stringify({ action:'getCourses' })
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'getCourses'})
   }).then(r=>r.json());
 
-  document.getElementById('courseList').innerHTML =
-    res.data.map((c,i)=>`
-      <div class="border rounded p-3">
-        <div class="font-bold">${c.名稱}</div>
-        <div class="text-xs text-gray-500">${c.開始} ～ ${c.結束}</div>
-        <button class="mt-2 bg-[#06C755] text-white px-3 py-1 rounded"
-                onclick="openCalendar(${i})">
-          報名
-        </button>
-      </div>
-    `).join('');
+  const sel = document.getElementById('courseSelect');
+  res.data.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
 }
 
-/* =====================================================
- * 日曆邏輯
- * ===================================================== */
-function openCalendar(index) {
-  activeCourse = index;
-  calendarData = generateCalendar();
-  renderCalendar();
-  document.getElementById('calendarModal').classList.remove('hidden');
-  document.getElementById('calendarModal').classList.add('flex');
+/* ===============================
+ * 課程變更 → 讀 Slot
+ * =============================== */
+document.getElementById('courseSelect').onchange = async e => {
+  currentCourseId = e.target.value;
+  resetUI();
+
+  if(!currentCourseId) return;
+
+  const res = await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      action:'getSlotsByCourse',
+      courseId: currentCourseId
+    })
+  }).then(r=>r.json());
+
+  slotData = res.data || [];
+  renderDates();
+};
+
+/* ===============================
+ * 日期
+ * =============================== */
+function renderDates(){
+  const dateSet = [...new Set(slotData.map(s=>s.date))];
+  const box = document.getElementById('dateList');
+  box.innerHTML = '';
+
+  dateSet.forEach(d=>{
+    const btn = document.createElement('button');
+    btn.className = 'slot-btn';
+    btn.textContent = d;
+    btn.onclick = ()=>selectDate(d);
+    box.appendChild(btn);
+  });
+
+  document.getElementById('dateCard').classList.remove('hidden');
 }
 
-function closeCalendar() {
-  document.getElementById('calendarModal').classList.add('hidden');
+function selectDate(date){
+  document.querySelectorAll('#dateList .slot-btn')
+    .forEach(b=>b.classList.remove('active'));
+  [...document.querySelectorAll('#dateList .slot-btn')]
+    .find(b=>b.textContent===date)
+    .classList.add('active');
+
+  renderSlots(date);
 }
 
-function generateCalendar() {
-  const days = 7; // demo：7天
-  const arr = [];
-  for (let i=0;i<days;i++){
-    arr.push({ date:`Day ${i+1}`, period:"NONE" });
-  }
-  return arr;
-}
+/* ===============================
+ * Slot（全日 / 上午 / 下午）
+ * =============================== */
+function renderSlots(date){
+  const list = document.getElementById('slotList');
+  list.innerHTML = '';
 
-function togglePeriod(i) {
-  const order = ["NONE","FULL","AM","PM"];
-  const idx = order.indexOf(calendarData[i].period);
-  calendarData[i].period = order[(idx+1)%order.length];
-  renderCalendar();
-}
-
-function renderCalendar() {
-  document.getElementById('calendarGrid').innerHTML =
-    calendarData.map((d,i)=>{
-      let cls="calendar-cell";
-      if(d.period==="FULL") cls+=" cell-full";
-      if(d.period==="AM") cls+=" cell-am";
-      if(d.period==="PM") cls+=" cell-pm";
-      return `
-        <div class="p-2 text-center cursor-pointer ${cls}"
-             onclick="togglePeriod(${i})">
-          <div>${d.date}</div>
-          <div class="font-bold text-xs">${d.period}</div>
+  slotData.filter(s=>s.date===date).forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'slot-btn';
+    div.innerHTML = `
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="font-black">${periodText(s.period)}</div>
+          <div class="text-xs text-slate-500">
+            名額 ${s.limit} ｜ 設備 $${s.equipFee}
+          </div>
         </div>
-      `;
-    }).join('');
+        <div class="font-black text-green-600">$${s.price}</div>
+      </div>
+    `;
+    div.onclick = ()=>selectSlot(s, div);
+    list.appendChild(div);
+  });
+
+  document.getElementById('slotCard').classList.remove('hidden');
 }
 
-function confirmCalendar() {
-  console.log("選擇結果", calendarData);
-  alert("日曆選擇完成（尚未扣款）");
-  closeCalendar();
+function periodText(p){
+  return p==='full'?'全日':p==='am'?'上午':'下午';
 }
 
-/* =====================================================
- * 導覽
- * ===================================================== */
-function showCourse(){}
+function selectSlot(slot, el){
+  document.querySelectorAll('#slotList .slot-btn')
+    .forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
 
-function showMember(){
-  alert("會員區尚未在 Step 3 啟用");
+  selectedSlot = slot;
+  document.getElementById('priceText').innerText = '$' + slot.price;
+  document.getElementById('priceCard').classList.remove('hidden');
+  document.getElementById('submitCard').classList.remove('hidden');
 }
 
-window.onload = init;
+/* ===============================
+ * 送出報名
+ * =============================== */
+async function submitRegistration(){
+  if(!selectedSlot) return alert('請選擇時段');
+
+  const res = await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      action:'register',
+      userId: currentUserId,
+      name: '學員',
+      slotId: selectedSlot.slotId,
+      courseId: selectedSlot.courseId,
+      period: selectedSlot.period,
+      payableAmount: selectedSlot.price
+    })
+  }).then(r=>r.json());
+
+  if(res.success){
+    alert('報名完成（尚未付款）');
+    liff.closeWindow();
+  } else {
+    alert(res.msg || '報名失敗');
+  }
+}
+
+/* ===============================
+ * Reset UI
+ * =============================== */
+function resetUI(){
+  document.getElementById('dateCard').classList.add('hidden');
+  document.getElementById('slotCard').classList.add('hidden');
+  document.getElementById('priceCard').classList.add('hidden');
+  document.getElementById('submitCard').classList.add('hidden');
+}
+
+/* ===============================
+ * Init
+ * =============================== */
+window.onload = async ()=>{
+  await initLiff();
+  await loadCourses();
+};
 </script>
+
 </body>
 </html>
