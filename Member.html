@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>運動島</title>
+  <title>運動島會員</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
@@ -11,129 +11,107 @@
 <body class="bg-slate-100">
 
 <!-- BANNER -->
-<div class="bg-[#06C755] p-5 text-white text-center font-black text-xl">
+<div class="bg-[#06C755] text-white text-center py-4 font-black text-xl">
   運動島 Sports Island
 </div>
 
-<!-- 主內容 -->
-<div id="view-course" class="p-4">課程列表載入中…</div>
-
-<div id="view-member" class="hidden p-4">
-  <h2 class="font-black text-lg mb-3">會員名冊</h2>
+<!-- 會員列表 -->
+<div id="view-member" class="p-4">
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-black text-lg">會員名冊</h2>
+    <button onclick="openAdd()" class="text-[#06C755] font-bold">＋ 新增家人</button>
+  </div>
   <div id="familyList" class="space-y-3"></div>
 </div>
 
-<div id="view-edit" class="hidden p-4">
-  <h2 class="font-black text-lg mb-3">編輯會員</h2>
+<!-- 新增家人 -->
+<div id="view-add" class="hidden p-4">
+  <h2 class="font-black text-lg mb-3">新增家人</h2>
 
-  <input type="hidden" id="eRow">
-  <input id="eName" class="w-full p-3 border rounded mb-2" placeholder="姓名">
-  <input id="ePhone" class="w-full p-3 border rounded mb-2" placeholder="電話">
+  <input id="aName" class="w-full p-3 border rounded mb-2" placeholder="姓名">
+  <input id="aPhone" class="w-full p-3 border rounded mb-2" placeholder="電話">
 
-  <select id="eGender" class="w-full p-3 border rounded mb-2">
+  <select id="aGender" class="w-full p-3 border rounded mb-2">
+    <option value="">性別</option>
     <option>男</option>
     <option>女</option>
   </select>
 
-  <input id="eBirthday" type="date" class="w-full p-3 border rounded mb-2">
+  <input id="aBirthday" type="date" class="w-full p-3 border rounded mb-2">
 
-  <select id="eAddress" class="w-full p-3 border rounded mb-2">
+  <select id="aAddress" class="w-full p-3 border rounded mb-2">
     <option>台北市</option><option>新北市</option><option>桃園市</option>
     <option>台中市</option><option>台南市</option><option>高雄市</option>
   </select>
 
-  <select id="eRelation" class="w-full p-3 border rounded mb-4">
-    <option>本人</option>
+  <select id="aRelation" class="w-full p-3 border rounded mb-4">
     <option>子女</option>
+    <option>配偶</option>
+    <option>家人</option>
   </select>
 
   <div class="flex gap-3">
-    <button onclick="saveEdit()" class="flex-1 bg-[#06C755] text-white py-3 rounded font-bold">
+    <button onclick="saveAdd()" class="flex-1 bg-[#06C755] text-white py-3 rounded font-bold">
       儲存
     </button>
-    <button onclick="cancelEdit()" class="flex-1 border border-[#06C755] text-[#06C755] py-3 rounded font-bold">
-      取消返回
+    <button onclick="cancelAdd()" class="flex-1 border border-[#06C755] text-[#06C755] py-3 rounded font-bold">
+      取消
     </button>
   </div>
 </div>
 
-<!-- 底部選單 -->
-<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex">
-  <button onclick="showCourse()" class="flex-1 py-3">課程</button>
-  <button onclick="showMember()" class="flex-1 py-3">會員</button>
-</div>
-
 <script>
 const API = "https://sport.wetw-net3.workers.dev/";
-let currentUid = "";
+let uid = "";
 
-async function init() {
-  await liff.init({ liffId: "2008792551-CzPJtVB1" });
-  if (!liff.isLoggedIn()) return liff.login();
-  currentUid = (await liff.getProfile()).userId;
-  loadCourses();
+async function init(){
+  await liff.init({ liffId:"2008792551-CzPJtVB1" });
+  if(!liff.isLoggedIn()) return liff.login();
+  uid = (await liff.getProfile()).userId;
+  loadFamily();
 }
 
-function showCourse() {
-  view('course');
-  loadCourses();
+async function loadFamily(){
+  const res = await fetch(API,{
+    method:'POST',
+    body:JSON.stringify({action:'getFamily', userId:uid})
+  }).then(r=>r.json());
+
+  familyList.innerHTML = res.data.map(m=>`
+    <div class="bg-white p-3 rounded">${m.name}（${m.relation}）</div>
+  `).join('');
 }
 
-function showMember() {
+function openAdd(){
+  view('add');
+}
+
+function cancelAdd(){
+  view('member');
+}
+
+async function saveAdd(){
+  await fetch(API,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'addFamily',
+      userId:uid,
+      name:aName.value,
+      phone:aPhone.value,
+      gender:aGender.value,
+      birthday:aBirthday.value,
+      address:aAddress.value,
+      relation:aRelation.value
+    })
+  });
   view('member');
   loadFamily();
 }
 
-function view(v) {
-  ['course','member','edit'].forEach(x =>
-    document.getElementById('view-'+x).classList.add('hidden')
-  );
-  document.getElementById('view-'+v).classList.remove('hidden');
+function view(v){
+  viewMember.classList.toggle('hidden', v!=='member');
+  viewAdd.classList.toggle('hidden', v!=='add');
 }
-
-async function loadFamily() {
-  const res = await fetch(API, {
-    method:'POST',
-    body:JSON.stringify({action:'getFamily', userId:currentUid})
-  }).then(r=>r.json());
-
-  familyList.innerHTML = res.data.map(m=>`
-    <div class="bg-white p-3 rounded flex justify-between">
-      <div>${m.name}</div>
-      <button class="text-[#06C755]" onclick='edit(${JSON.stringify(m)})'>編輯</button>
-    </div>
-  `).join('');
-}
-
-function edit(m){
-  view('edit');
-  eRow.value=m.rowIndex;
-  eName.value=m.name;
-  ePhone.value=m.phone;
-  eGender.value=m.gender;
-  eBirthday.value=m.birthday;
-  eAddress.value=m.address;
-  eRelation.value=m.relation;
-}
-
-async function saveEdit(){
-  await fetch(API,{
-    method:'POST',
-    body:JSON.stringify({
-      action:'updateFamily',
-      rowIndex:eRow.value,
-      name:eName.value,
-      phone:ePhone.value,
-      gender:eGender.value,
-      birthday:eBirthday.value,
-      address:eAddress.value,
-      relation:eRelation.value
-    })
-  });
-  showMember();
-}
-
-function cancelEdit(){ showMember(); }
 
 window.onload = init;
 </script>
