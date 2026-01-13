@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Slot 管理｜運動島</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{--line:#06C755}
+.btn{background:var(--line);color:#fff;font-weight:700}
+</style>
+</head>
+
+<body class="bg-[#F4F5F7] p-6">
+<h1 class="text-2xl font-black mb-6">Slot 日曆管理</h1>
+
+<table class="w-full bg-white rounded-xl overflow-hidden">
+<thead class="bg-[#F0FBF5] text-[#06C755] font-bold">
+<tr>
+<th class="p-3">日期</th>
+<th>時段</th>
+<th>價格</th>
+<th>是否開放</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody id="slotTable"></tbody>
+</table>
+
+<script>
+const API = "https://sport.wetw-net3.workers.dev/";
+
+async function loadSlots(){
+  const res = await fetch(API,{
+    method:'POST',
+    body:JSON.stringify({action:'adminGetSlots'})
+  }).then(r=>r.json());
+
+  slotTable.innerHTML = res.data.map(s=>`
+    <tr class="border-b">
+      <td class="p-3">${s.date}</td>
+      <td>${s.period}</td>
+      <td>
+        <input value="${s.price}" 
+          onchange="update('${s.id}',this.value)"
+          class="border p-1 w-24">
+      </td>
+      <td>${s.open?'✅':'❌'}</td>
+      <td>
+        <button class="btn px-3 py-1 rounded"
+          onclick="toggle('${s.id}')">切換</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function update(id,price){
+  fetch(API,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'updateSlot',
+      id, price
+    })
+  });
+}
+
+function toggle(id){
+  fetch(API,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'toggleSlot',
+      id
+    })
+  }).then(loadSlots);
+}
+
+loadSlots();
+</script>
+</body>
+</html>
