@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.day{border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.sel{background:#06C755;color:#fff}
+</style>
+</head>
+
+<body class="p-4 bg-white">
+<h2 class="font-black text-xl mb-4">選擇出席日期</h2>
+
+<div id="calendar" class="grid grid-cols-2 gap-3"></div>
+
+<script>
+const slots = [
+  {id:'1',date:'2026-07-01',period:'全日'},
+  {id:'2',date:'2026-07-01',period:'上午'},
+  {id:'3',date:'2026-07-01',period:'下午'}
+];
+
+let selected = [];
+
+calendar.innerHTML = slots.map(s=>`
+  <div class="day" onclick="toggle('${s.id}',this)">
+    <div class="font-bold">${s.date}</div>
+    <div class="text-sm">${s.period}</div>
+  </div>
+`).join('');
+
+function toggle(id,el){
+  if(selected.includes(id)){
+    selected=selected.filter(x=>x!==id);
+    el.classList.remove('sel');
+  }else{
+    selected.push(id);
+    el.classList.add('sel');
+  }
+  console.log('已選',selected);
+}
+</script>
+</body>
+</html>
