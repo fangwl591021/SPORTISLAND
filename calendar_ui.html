@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>出席日曆選擇</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#F4F5F7] p-6">
+
+<div class="max-w-md mx-auto bg-white rounded-xl p-6">
+  <h2 class="text-xl font-bold text-[#06C755] mb-4">請選擇不出席時段</h2>
+
+  <div id="calendar" class="space-y-2"></div>
+
+  <button onclick="submitAbsence()"
+    class="w-full mt-6 bg-[#06C755] text-white py-3 rounded-lg">
+    確認送出
+  </button>
+</div>
+
+<script>
+const days = 5;
+const calendar = document.getElementById('calendar');
+
+for(let i=1;i<=days;i++){
+  calendar.innerHTML += `
+  <div class="border rounded-lg p-3">
+    <div class="font-bold mb-2">Day ${i}</div>
+    <label class="mr-3"><input type="checkbox" value="full-${i}"> 全日</label>
+    <label class="mr-3"><input type="checkbox" value="am-${i}"> 上午</label>
+    <label><input type="checkbox" value="pm-${i}"> 下午</label>
+  </div>`;
+}
+
+function submitAbsence(){
+  const checked = [...document.querySelectorAll('input:checked')].map(i=>i.value);
+  alert('不出席設定：\n'+checked.join(', '));
+}
+</script>
+</body>
+</html>
