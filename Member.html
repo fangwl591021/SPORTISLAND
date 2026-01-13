@@ -5,7 +5,7 @@
   <title>運動島｜課程報名</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Tailwind（開發版） -->
+  <!-- Tailwind（開發用） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- LIFF -->
@@ -13,20 +13,41 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-    body { font-family: 'Noto Sans TC', sans-serif; background:#F4F5F7; }
-    .card { background:#fff; border-radius:16px; border:1px solid #E5E7EB; }
-    .btn-line { background:#06C755; color:#fff; font-weight:700; }
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #F4F5F7;
+    }
+    .btn-line {
+      background:#06C755;
+      color:#fff;
+      font-weight:700;
+    }
     .btn-line:hover { background:#05b94d; }
-    .slot-btn { border:1px solid #E5E7EB; border-radius:12px; padding:12px; font-weight:700; }
-    .slot-btn.active { background:#06C755; color:#fff; border-color:#06C755; }
+    .card {
+      background:#fff;
+      border-radius:16px;
+      border:1px solid #E5E7EB;
+    }
+    .slot-btn {
+      border:1px solid #E5E7EB;
+      border-radius:12px;
+      padding:12px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .slot-btn.active {
+      background:#06C755;
+      color:#fff;
+      border-color:#06C755;
+    }
   </style>
 </head>
 
-<body class="pb-24">
+<body class="pb-28">
 
 <!-- Header -->
 <div class="bg-white shadow sticky top-0 z-10">
-  <div class="max-w-md mx-auto p-4 flex justify-between items-center">
+  <div class="max-w-md mx-auto p-4 flex items-center justify-between">
     <h1 class="font-black text-lg">運動島 課程報名</h1>
     <div id="userName" class="text-sm text-slate-500">載入中...</div>
   </div>
@@ -35,29 +56,29 @@
 <!-- Main -->
 <div class="max-w-md mx-auto p-4 space-y-6">
 
-  <!-- 課程 -->
+  <!-- ① 課程 -->
   <div class="card p-5">
-    <h2 class="font-black text-lg mb-3">① 選擇課程</h2>
+    <h2 class="font-black text-lg mb-4">① 選擇課程</h2>
     <select id="courseSelect" class="w-full p-3 border rounded-xl font-bold">
       <option value="">請選擇課程</option>
     </select>
   </div>
 
-  <!-- 日期 -->
+  <!-- ② 日期 -->
   <div class="card p-5 hidden" id="dateCard">
-    <h2 class="font-black text-lg mb-3">② 選擇日期</h2>
+    <h2 class="font-black text-lg mb-4">② 選擇日期</h2>
     <div id="dateList" class="grid grid-cols-3 gap-3"></div>
   </div>
 
-  <!-- Slot -->
+  <!-- ③ 時段 -->
   <div class="card p-5 hidden" id="slotCard">
-    <h2 class="font-black text-lg mb-3">③ 選擇時段</h2>
+    <h2 class="font-black text-lg mb-4">③ 選擇時段</h2>
     <div id="slotList" class="space-y-3"></div>
   </div>
 
-  <!-- 金額 -->
+  <!-- ④ 金額 -->
   <div class="card p-5 hidden" id="priceCard">
-    <h2 class="font-black text-lg mb-2">④ 應付金額</h2>
+    <h2 class="font-black text-lg mb-3">④ 應付金額</h2>
     <div class="flex justify-between items-center">
       <span class="text-slate-500 font-bold">本次報名</span>
       <span id="priceText" class="text-2xl font-black text-green-600">$0</span>
@@ -66,7 +87,8 @@
 
   <!-- 送出 -->
   <div class="hidden" id="submitCard">
-    <button onclick="submitRegistration()" class="w-full py-4 btn-line rounded-2xl text-lg">
+    <button onclick="submitRegistration()"
+      class="w-full py-4 btn-line rounded-2xl text-lg">
       確認報名（尚未付款）
     </button>
   </div>
@@ -75,9 +97,9 @@
 
 <script>
 /* ===============================
- * 🔒 API 鎖定（最重要）
+ * API（只改這一行）
  * =============================== */
-const API_URL = "https://sport-island.fangwl591021.workers.dev";
+const API_URL = 'https://sport-island.fangwl591021.workers.dev';
 
 /* ===============================
  * 狀態
@@ -89,9 +111,12 @@ let selectedSlot = null;
 /* ===============================
  * LIFF
  * =============================== */
-async function initLiff(){
-  await liff.init({ liffId:'2008792551-CzPJtVB1' });
-  if(!liff.isLoggedIn()){ liff.login(); return; }
+async function initLiff() {
+  await liff.init({ liffId: '2008792551-CzPJtVB1' });
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
   const profile = await liff.getProfile();
   currentUserId = profile.userId;
   document.getElementById('userName').innerText = profile.displayName;
@@ -100,33 +125,37 @@ async function initLiff(){
 /* ===============================
  * 課程
  * =============================== */
-async function loadCourses(){
-  const res = await fetch(API_URL,{
+async function loadCourses() {
+  const res = await fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'getCourses'})
+    body:JSON.stringify({ action:'getCourses' })
   }).then(r=>r.json());
 
   const sel = document.getElementById('courseSelect');
   res.data.forEach(c=>{
-    const o = document.createElement('option');
-    o.value = c.id;
-    o.textContent = c.name;
-    sel.appendChild(o);
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    sel.appendChild(opt);
   });
 }
 
 /* ===============================
- * 課程 → Slot
+ * 課程變更 → Slot
  * =============================== */
-document.getElementById('courseSelect').onchange = async e=>{
+document.getElementById('courseSelect').onchange = async e => {
   resetUI();
-  if(!e.target.value) return;
+  const courseId = e.target.value;
+  if(!courseId) return;
 
   const res = await fetch(API_URL,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'getSlotsByCourse', courseId:e.target.value})
+    body:JSON.stringify({
+      action:'getSlotsByCourse',
+      courseId
+    })
   }).then(r=>r.json());
 
   slotData = res.data || [];
@@ -139,61 +168,73 @@ document.getElementById('courseSelect').onchange = async e=>{
 function renderDates(){
   const dates = [...new Set(slotData.map(s=>s.date))];
   const box = document.getElementById('dateList');
-  box.innerHTML='';
+  box.innerHTML = '';
+
   dates.forEach(d=>{
-    const b=document.createElement('button');
-    b.className='slot-btn';
-    b.textContent=d;
-    b.onclick=()=>selectDate(d,b);
-    box.appendChild(b);
+    const btn = document.createElement('button');
+    btn.className = 'slot-btn';
+    btn.textContent = d;
+    btn.onclick = ()=>selectDate(d, btn);
+    box.appendChild(btn);
   });
+
   document.getElementById('dateCard').classList.remove('hidden');
 }
 
-function selectDate(d,btn){
-  document.querySelectorAll('#dateList .slot-btn').forEach(b=>b.classList.remove('active'));
+function selectDate(date, btn){
+  document.querySelectorAll('#dateList .slot-btn')
+    .forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderSlots(d);
+  renderSlots(date);
 }
 
 /* ===============================
- * Slot
+ * 時段
  * =============================== */
 function renderSlots(date){
-  const box=document.getElementById('slotList');
-  box.innerHTML='';
+  const list = document.getElementById('slotList');
+  list.innerHTML = '';
+
   slotData.filter(s=>s.date===date).forEach(s=>{
-    const div=document.createElement('div');
-    div.className='slot-btn';
-    div.innerHTML=`
+    const div = document.createElement('div');
+    div.className = 'slot-btn';
+    div.innerHTML = `
       <div class="flex justify-between items-center">
         <div>
           <div class="font-black">${periodText(s.period)}</div>
-          <div class="text-xs text-slate-500">名額 ${s.limit}｜設備 $${s.equipFee}</div>
+          <div class="text-xs text-slate-500">
+            名額 ${s.limit} ｜ 設備 $${s.equipFee}
+          </div>
         </div>
         <div class="font-black text-green-600">$${s.price}</div>
-      </div>`;
-    div.onclick=()=>selectSlot(s,div);
-    box.appendChild(div);
+      </div>
+    `;
+    div.onclick = ()=>selectSlot(s, div);
+    list.appendChild(div);
   });
+
   document.getElementById('slotCard').classList.remove('hidden');
 }
 
 function periodText(p){
-  return p==='full'?'全日':p==='am'?'上午':'下午';
+  if(p==='full') return '全日';
+  if(p==='am') return '上午';
+  return '下午';
 }
 
-function selectSlot(slot,el){
-  document.querySelectorAll('#slotList .slot-btn').forEach(b=>b.classList.remove('active'));
+function selectSlot(slot, el){
+  document.querySelectorAll('#slotList .slot-btn')
+    .forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
+
   selectedSlot = slot;
-  document.getElementById('priceText').innerText='$'+slot.price;
+  document.getElementById('priceText').innerText = '$' + slot.price;
   document.getElementById('priceCard').classList.remove('hidden');
   document.getElementById('submitCard').classList.remove('hidden');
 }
 
 /* ===============================
- * 送出
+ * 報名
  * =============================== */
 async function submitRegistration(){
   if(!selectedSlot) return alert('請選擇時段');
@@ -204,19 +245,18 @@ async function submitRegistration(){
     body:JSON.stringify({
       action:'register',
       userId: currentUserId,
-      name:'學員',
-      slotId:selectedSlot.slotId,
-      courseId:selectedSlot.courseId,
-      period:selectedSlot.period,
-      payableAmount:selectedSlot.price
+      slotId: selectedSlot.slotId,
+      courseId: selectedSlot.courseId,
+      period: selectedSlot.period,
+      payableAmount: selectedSlot.price
     })
   }).then(r=>r.json());
 
   if(res.success){
     alert('報名完成（尚未付款）');
     liff.closeWindow();
-  }else{
-    alert(res.msg||'報名失敗');
+  } else {
+    alert(res.msg || '報名失敗');
   }
 }
 
@@ -224,14 +264,16 @@ async function submitRegistration(){
  * Reset
  * =============================== */
 function resetUI(){
-  ['dateCard','slotCard','priceCard','submitCard']
-    .forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('dateCard').classList.add('hidden');
+  document.getElementById('slotCard').classList.add('hidden');
+  document.getElementById('priceCard').classList.add('hidden');
+  document.getElementById('submitCard').classList.add('hidden');
 }
 
 /* ===============================
  * Init
  * =============================== */
-window.onload=async()=>{
+window.onload = async ()=>{
   await initLiff();
   await loadCourses();
 };
