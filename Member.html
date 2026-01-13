@@ -1,182 +1,127 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>運動島 Sports Island</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
-  <style>
-    body { background:#F4F5F7 }
-    .btn-line { background:#06C755; color:white }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>運動島 Sports Island</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{--line:#06C755}
+.nav-active{color:var(--line);font-weight:900}
+</style>
 </head>
 
-<body class="min-h-screen">
+<body class="bg-[#F4F5F7]">
 
-<!-- ===== BANNER ===== -->
-<div class="w-full">
-  <img src="https://aiwe.cc/wp-content/uploads/2025/12/3486bc19dc6317e16bf4f1449ec52ae4.jpg"
-       class="w-full object-cover" />
-</div>
+<div class="max-w-md mx-auto bg-white min-h-screen flex flex-col">
 
-<!-- ===== NAV ===== -->
-<div class="flex justify-around bg-white py-3 border-t fixed bottom-0 w-full">
-  <button onclick="showCourses()">課程</button>
-  <button onclick="showMember()">會員</button>
-</div>
+<!-- BANNER -->
+<img src="https://aiwe.cc/wp-content/uploads/2025/12/3486bc19dc6317e16bf4f1449ec52ae4.jpg"
+     class="w-full">
 
-<!-- ===== CONTENT ===== -->
-<div class="p-4 pb-24">
+<!-- VIEW -->
+<main class="flex-1 p-4">
 
-  <!-- 課程 -->
-  <section id="courseView">
-    <h2 class="font-bold mb-4">目前課程</h2>
-    <div id="courseList">載入中...</div>
-  </section>
+<section id="view-course">
+  <h2 class="font-black text-xl mb-4">目前課程</h2>
+  <div id="courseList"></div>
+</section>
 
-  <!-- 會員清單 -->
-  <section id="memberView" class="hidden">
-    <h2 class="font-bold mb-4">會員名冊</h2>
-    <div id="memberList"></div>
+<section id="view-member" class="hidden">
+  <h2 class="font-black text-xl mb-4">會員名冊</h2>
+  <button onclick="openMemberForm()"
+    class="w-full bg-[#06C755] text-white py-3 rounded-xl font-bold mb-4">
+    ＋ 新增成員
+  </button>
+  <div id="memberList"></div>
+</section>
 
-    <button onclick="openAddMember()"
-      class="btn-line w-full py-3 rounded-xl mt-4 font-bold">
-      ＋ 新增家人
-    </button>
-  </section>
-
-  <!-- 編輯表單 -->
-  <section id="memberFormView" class="hidden">
-    <h2 class="font-bold mb-4" id="formTitle">編輯會員</h2>
-
-    <input type="hidden" id="rowIndex">
-
-    <input id="mName" placeholder="姓名" class="w-full p-3 rounded mb-2">
-    <input id="mPhone" placeholder="電話" class="w-full p-3 rounded mb-2">
-
-    <select id="mGender" class="w-full p-3 rounded mb-2">
-      <option value="">性別</option>
-      <option value="男">男</option>
-      <option value="女">女</option>
-    </select>
-
-    <select id="mIdentity" class="w-full p-3 rounded mb-2">
+<section id="view-member-form" class="hidden">
+  <h2 class="font-black text-xl mb-4">成員資料</h2>
+  <form id="memberForm" class="space-y-3">
+    <input type="hidden" id="mIndex">
+    <input id="mName" placeholder="姓名" class="w-full p-3 border rounded">
+    <select id="mIdentity" class="w-full p-3 border rounded">
       <option value="一般">一般身分</option>
       <option value="學生">學生</option>
     </select>
-
-    <select id="mRelation" class="w-full p-3 rounded mb-4">
-      <option value="本人">本人</option>
-      <option value="子女">子女</option>
-      <option value="家人">家人</option>
+    <input id="mPhone" placeholder="電話" class="w-full p-3 border rounded">
+    <select id="mCity" class="w-full p-3 border rounded">
+      <option>台北市</option><option>新北市</option><option>桃園市</option>
+      <option>台中市</option><option>台南市</option><option>高雄市</option>
     </select>
+    <div class="flex gap-2">
+      <button type="submit"
+        class="flex-1 bg-[#06C755] text-white py-3 rounded-xl font-bold">
+        儲存
+      </button>
+      <button type="button" onclick="backToMember()"
+        class="flex-1 border py-3 rounded-xl font-bold">
+        取消
+      </button>
+    </div>
+  </form>
+</section>
 
-    <button onclick="saveMember()" class="btn-line w-full py-3 rounded-xl font-bold">
-      儲存
-    </button>
+</main>
 
-    <button onclick="cancelEdit()" class="w-full py-3 mt-2 bg-white rounded-xl">
-      取消返回
-    </button>
-  </section>
+<!-- NAV -->
+<nav class="flex border-t">
+  <button onclick="show('course')" class="flex-1 py-3">課程</button>
+  <button onclick="show('member')" class="flex-1 py-3">會員</button>
+</nav>
 
 </div>
 
 <script>
-const API_URL = "https://sport.wetw-net3.workers.dev/";
-let uid = "";
-let members = [];
+const API="https://sport.wetw-net3.workers.dev/";
+let members=[];
 
-async function init() {
-  await liff.init({ liffId:"2008792551-CzPJtVB1" });
-  if(!liff.isLoggedIn()) liff.login();
-  uid = (await liff.getProfile()).userId;
-  loadCourses();
-}
-window.onload = init;
-
-/* ===== View Switch ===== */
-function showCourses(){
-  courseView.classList.remove('hidden');
-  memberView.classList.add('hidden');
-  memberFormView.classList.add('hidden');
-}
-function showMember(){
-  courseView.classList.add('hidden');
-  memberView.classList.remove('hidden');
-  memberFormView.classList.add('hidden');
-  loadMembers();
+function show(v){
+  ['course','member','member-form'].forEach(x=>{
+    document.getElementById('view-'+x)?.classList.add('hidden');
+  });
+  document.getElementById('view-'+v).classList.remove('hidden');
 }
 
-/* ===== Courses ===== */
-async function loadCourses(){
-  const r = await fetch(API_URL,{method:'POST',body:JSON.stringify({action:'getCourses'})});
-  const j = await r.json();
-  courseList.innerHTML = j.data.map(c=>`
-    <div class="bg-white p-4 rounded mb-3">
-      <div class="font-bold">${c.名稱}</div>
-      <div class="text-sm text-gray-500">$${c.價格}</div>
+function openMemberForm(i){
+  show('member-form');
+  if(i!=null){
+    const m=members[i];
+    mIndex.value=i;
+    mName.value=m.name;
+    mPhone.value=m.phone;
+    mCity.value=m.city;
+  }else{
+    memberForm.reset();
+    mIndex.value='';
+  }
+}
+
+function backToMember(){show('member');}
+
+memberForm.onsubmit=e=>{
+  e.preventDefault();
+  if(mIndex.value===''){
+    members.push({
+      name:mName.value,
+      phone:mPhone.value,
+      city:mCity.value
+    });
+  }
+  renderMembers();
+  show('member');
+};
+
+function renderMembers(){
+  memberList.innerHTML=members.map((m,i)=>`
+    <div class="border p-3 rounded mb-2 flex justify-between">
+      <div>${m.name}<div class="text-xs">${m.phone}</div></div>
+      <button onclick="openMemberForm(${i})"
+        class="text-[#06C755] font-bold">編輯</button>
     </div>
   `).join('');
-}
-
-/* ===== Members ===== */
-async function loadMembers(){
-  const r = await fetch(API_URL,{method:'POST',
-    body:JSON.stringify({action:'getFamily',userId:uid})});
-  const j = await r.json();
-  members = j.data;
-  memberList.innerHTML = members.map(m=>`
-    <div class="bg-white p-4 rounded mb-2 flex justify-between">
-      <div>${m.name}</div>
-      <button class="text-green-600"
-        onclick="openEditMember(${m.rowIndex})">編輯</button>
-    </div>
-  `).join('');
-}
-
-function openEditMember(row){
-  const m = members.find(x=>x.rowIndex===row);
-  memberView.classList.add('hidden');
-  memberFormView.classList.remove('hidden');
-
-  rowIndex.value = m.rowIndex;
-  mName.value = m.name;
-  mPhone.value = m.phone;
-  mGender.value = m.gender;
-  mRelation.value = m.relation;
-  mIdentity.value = m.identity;
-}
-
-function openAddMember(){
-  rowIndex.value="";
-  mName.value="";
-  mPhone.value="";
-  memberView.classList.add('hidden');
-  memberFormView.classList.remove('hidden');
-}
-
-async function saveMember(){
-  const payload={
-    action: rowIndex.value ? 'updateFamily':'addFamily',
-    rowIndex: rowIndex.value,
-    userId: uid,
-    name:mName.value,
-    phone:mPhone.value,
-    gender:mGender.value,
-    relation:mRelation.value,
-    identity:mIdentity.value
-  };
-  await fetch(API_URL,{method:'POST',body:JSON.stringify(payload)});
-  cancelEdit();
-}
-
-function cancelEdit(){
-  memberFormView.classList.add('hidden');
-  showMember();
 }
 </script>
 </body>
