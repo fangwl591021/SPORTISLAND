@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{--line:#06C755}
+.card{border:1px solid #e5e7eb;border-radius:16px;padding:16px}
+</style>
+</head>
+
+<body class="p-6 bg-[#F4F5F7]">
+<h2 class="text-xl font-black mb-4">報名試算</h2>
+
+<div id="slots" class="grid grid-cols-2 gap-3 mb-4"></div>
+
+<div class="card bg-white">
+  <div class="flex justify-between text-sm">
+    <span>原價</span><span id="base">$0</span>
+  </div>
+  <div class="flex justify-between text-sm text-red-500">
+    <span>扣除</span><span id="deduct">$0</span>
+  </div>
+  <div class="flex justify-between text-sm text-blue-500">
+    <span>設備</span><span id="equip">$0</span>
+  </div>
+  <hr class="my-2">
+  <div class="flex justify-between text-lg font-black text-[#06C755]">
+    <span>應付</span><span id="final">$0</span>
+  </div>
+</div>
+
+<script>
+const API = "https://sport.wetw-net3.workers.dev/";
+let selectedSlots = [];
+
+const mockSlots = [
+  {id:'S1',label:'7/1 全日'},
+  {id:'S2',label:'7/2 上午'},
+  {id:'S3',label:'7/2 下午'}
+];
+
+slots.innerHTML = mockSlots.map(s=>`
+  <button class="card bg-white"
+    onclick="toggle('${s.id}',this)">
+    ${s.label}
+  </button>
+`).join('');
+
+function toggle(id,el){
+  if(selectedSlots.includes(id)){
+    selectedSlots = selectedSlots.filter(x=>x!==id);
+    el.classList.remove('bg-green-100');
+  }else{
+    selectedSlots.push(id);
+    el.classList.add('bg-green-100');
+  }
+  preview();
+}
+
+async function preview(){
+  const res = await fetch(API,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'previewPrice',
+      courseId:'C001',
+      slotIds:selectedSlots,
+      equipments:[]
+    })
+  }).then(r=>r.json());
+
+  if(!res.success) return;
+
+  base.innerText   = `$${res.data.basePrice}`;
+  deduct.innerText = `-$${res.data.deduction}`;
+  equip.innerText  = `$${res.data.equipmentFee}`;
+  final.innerText  = `$${res.data.finalPrice}`;
+}
+</script>
+</body>
+</html>
