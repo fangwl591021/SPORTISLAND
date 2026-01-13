@@ -1,76 +1,185 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<title>運動島後台</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-  :root { --line:#06C755 }
-</style>
+  <meta charset="UTF-8" />
+  <title>運動島｜後台管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind CDN（後台可接受） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --line-green: #06C755;
+    }
+    body {
+      font-family: "Noto Sans TC", system-ui, sans-serif;
+      background: #f5f6f7;
+    }
+  </style>
 </head>
 
-<body class="bg-[#F4F5F7]">
+<body class="min-h-screen">
 
-<div class="flex">
-  <!-- Sidebar -->
-  <aside class="w-56 bg-white h-screen border-r">
-    <div class="p-6 font-black text-[#06C755]">SI ADMIN</div>
-    <button onclick="loadCourses()"
-      class="w-full text-left px-6 py-3 hover:bg-green-50">
-      課程管理
-    </button>
-  </aside>
+  <!-- Header -->
+  <header class="bg-white border-b sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-black text-slate-800">
+        🛠 運動島 後台管理
+      </h1>
+      <span class="text-sm font-bold text-green-600">
+        LINE OA 管理介面
+      </span>
+    </div>
+  </header>
 
-  <!-- Main -->
-  <main class="flex-1 p-8">
-    <h1 class="text-2xl font-black mb-6">課程規格</h1>
+  <!-- Tabs -->
+  <nav class="bg-white border-b">
+    <div class="max-w-6xl mx-auto px-6 flex space-x-6">
+      <button class="tab-btn text-green-600 font-black border-b-4 border-green-500 py-3"
+              onclick="showTab('course')">課程管理</button>
+      <button class="tab-btn text-slate-500 font-bold py-3"
+              onclick="showTab('payment')">金流管理</button>
+    </div>
+  </nav>
 
-    <button onclick="newCourse()"
-      class="bg-[#06C755] text-white px-6 py-3 rounded-xl font-bold mb-6">
-      ＋ 新增課程
-    </button>
+  <!-- Content -->
+  <main class="max-w-6xl mx-auto px-6 py-8 space-y-12">
 
-    <table class="w-full bg-white rounded-xl overflow-hidden">
-      <thead class="bg-green-50">
-        <tr>
-          <th class="p-4 text-left">課程</th>
-          <th>類型</th>
-          <th>價格</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="courseBody"></tbody>
-    </table>
+    <!-- 課程管理 -->
+    <section id="tab-course">
+      <h2 class="text-lg font-black mb-4">📚 課程列表</h2>
+
+      <div class="bg-white rounded-xl border overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-green-50 text-green-700 font-bold">
+            <tr>
+              <th class="p-3 text-left">課程</th>
+              <th class="p-3">梯次</th>
+              <th class="p-3">期間</th>
+              <th class="p-3">狀態</th>
+            </tr>
+          </thead>
+          <tbody id="courseTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 金流管理 -->
+    <section id="tab-payment" class="hidden">
+      <h2 class="text-lg font-black mb-4">💰 金流管理</h2>
+
+      <div class="bg-white rounded-xl border overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-green-50 text-green-700 font-bold">
+            <tr>
+              <th class="p-3">學員</th>
+              <th class="p-3">課程</th>
+              <th class="p-3">應付</th>
+              <th class="p-3">實付</th>
+              <th class="p-3">狀態</th>
+              <th class="p-3">操作</th>
+            </tr>
+          </thead>
+          <tbody id="paymentTable"></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
-</div>
 
 <script>
-const API = "https://sport.wetw-net3.workers.dev/";
+const API_URL = window.location.href.split('?')[0];
 
-async function loadCourses(){
-  const r = await fetch(API,{
-    method:'POST',
-    body:JSON.stringify({action:'adminGetData'})
+/* =============================
+ * Tabs
+ * ============================= */
+function showTab(tab) {
+  document.getElementById('tab-course').classList.toggle('hidden', tab !== 'course');
+  document.getElementById('tab-payment').classList.toggle('hidden', tab !== 'payment');
+
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('text-green-600','border-green-500','border-b-4','font-black');
+    b.classList.add('text-slate-500','font-bold');
   });
-  const j = await r.json();
 
-  courseBody.innerHTML = j.課程.map(c=>`
+  event.target.classList.add('text-green-600','border-green-500','border-b-4','font-black');
+}
+
+/* =============================
+ * Load Courses
+ * ============================= */
+async function loadCourses() {
+  const res = await post({ action: 'adminGetData' });
+  const list = res.課程 || [];
+
+  document.getElementById('courseTable').innerHTML = list.map(c => `
     <tr class="border-t">
-      <td class="p-4 font-bold">${c.name}</td>
-      <td>${c.category}</td>
-      <td>$${c.fullPrice}</td>
-      <td class="text-right pr-4">
-        <button class="text-[#06C755] font-bold">編輯</button>
+      <td class="p-3 font-bold">${c.name}</td>
+      <td class="p-3 text-center">${c.batch || '-'}</td>
+      <td class="p-3 text-center">${c.start || ''} ~ ${c.end || ''}</td>
+      <td class="p-3 text-center text-green-600 font-bold">${c.status}</td>
+    </tr>
+  `).join('');
+}
+
+/* =============================
+ * Load Payments
+ * ============================= */
+async function loadPayments() {
+  const res = await post({ action: 'adminGetPayments' });
+  const list = res.data || [];
+
+  document.getElementById('paymentTable').innerHTML = list.map(p => `
+    <tr class="border-t">
+      <td class="p-3 font-bold">${p.student}</td>
+      <td class="p-3">${p.course}</td>
+      <td class="p-3 text-right text-red-600 font-bold">$${p.payable}</td>
+      <td class="p-3">
+        <input type="number" class="w-24 border rounded px-2 py-1"
+               value="${p.paid}"
+               onchange="updatePayment(${p.row}, this.value, '${p.status}')">
+      </td>
+      <td class="p-3 text-center font-bold">${p.status}</td>
+      <td class="p-3 text-center">
+        <button class="bg-green-500 text-white px-3 py-1 rounded"
+                onclick="updatePayment(${p.row}, ${p.payable}, 'PAID')">
+          標記已付
+        </button>
       </td>
     </tr>
   `).join('');
 }
 
-function newCourse(){
-  alert('下一步接編輯器');
+/* =============================
+ * Update Payment
+ * ============================= */
+async function updatePayment(row, paid, status) {
+  await post({
+    action: 'adminUpdatePayment',
+    row,
+    paid,
+    status
+  });
+  loadPayments();
 }
 
+/* =============================
+ * POST helper
+ * ============================= */
+async function post(payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return await res.json();
+}
+
+/* Init */
 loadCourses();
+loadPayments();
 </script>
+
 </body>
 </html>
