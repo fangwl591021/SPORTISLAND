@@ -24,37 +24,45 @@
   <div id="familyList" class="space-y-3"></div>
 </div>
 
-<!-- 新增家人 -->
-<div id="view-add" class="hidden p-4">
-  <h2 class="font-black text-lg mb-3">新增家人</h2>
+<!-- 新增 / 編輯 -->
+<div id="view-form" class="hidden p-4">
+  <h2 id="formTitle" class="font-black text-lg mb-3">新增家人</h2>
 
-  <input id="aName" class="w-full p-3 border rounded mb-2" placeholder="姓名">
-  <input id="aPhone" class="w-full p-3 border rounded mb-2" placeholder="電話">
+  <input type="hidden" id="rowIndex">
 
-  <select id="aGender" class="w-full p-3 border rounded mb-2">
+  <input id="name" class="w-full p-3 border rounded mb-2" placeholder="姓名">
+  <input id="phone" class="w-full p-3 border rounded mb-2" placeholder="電話">
+
+  <select id="gender" class="w-full p-3 border rounded mb-2">
     <option value="">性別</option>
     <option>男</option>
     <option>女</option>
   </select>
 
-  <input id="aBirthday" type="date" class="w-full p-3 border rounded mb-2">
+  <input id="birthday" type="date" class="w-full p-3 border rounded mb-2">
 
-  <select id="aAddress" class="w-full p-3 border rounded mb-2">
+  <select id="address" class="w-full p-3 border rounded mb-2">
     <option>台北市</option><option>新北市</option><option>桃園市</option>
     <option>台中市</option><option>台南市</option><option>高雄市</option>
   </select>
 
-  <select id="aRelation" class="w-full p-3 border rounded mb-4">
+  <select id="relation" class="w-full p-3 border rounded mb-2">
+    <option>本人</option>
     <option>子女</option>
-    <option>配偶</option>
     <option>家人</option>
   </select>
 
+  <!-- ⭐ 身分別 -->
+  <select id="identity" class="w-full p-3 border rounded mb-4">
+    <option value="一般">一般身分</option>
+    <option value="學生">學生</option>
+  </select>
+
   <div class="flex gap-3">
-    <button onclick="saveAdd()" class="flex-1 bg-[#06C755] text-white py-3 rounded font-bold">
+    <button onclick="save()" class="flex-1 bg-[#06C755] text-white py-3 rounded font-bold">
       儲存
     </button>
-    <button onclick="cancelAdd()" class="flex-1 border border-[#06C755] text-[#06C755] py-3 rounded font-bold">
+    <button onclick="cancel()" class="flex-1 border border-[#06C755] text-[#06C755] py-3 rounded font-bold">
       取消
     </button>
   </div>
@@ -78,39 +86,67 @@ async function loadFamily(){
   }).then(r=>r.json());
 
   familyList.innerHTML = res.data.map(m=>`
-    <div class="bg-white p-3 rounded">${m.name}（${m.relation}）</div>
+    <div class="bg-white p-3 rounded flex justify-between">
+      <div>
+        <div class="font-bold">${m.name}</div>
+        <div class="text-xs text-slate-500">${m.relation}｜${m.identity}</div>
+      </div>
+      <button class="text-[#06C755]" onclick='edit(${JSON.stringify(m)})'>編輯</button>
+    </div>
   `).join('');
 }
 
 function openAdd(){
-  view('add');
+  viewForm();
 }
 
-function cancelAdd(){
-  view('member');
+function edit(m){
+  viewForm("編輯會員");
+  rowIndex.value = m.rowIndex;
+  name.value = m.name;
+  phone.value = m.phone;
+  gender.value = m.gender;
+  birthday.value = m.birthday;
+  address.value = m.address;
+  relation.value = m.relation;
+  identity.value = m.identity;
 }
 
-async function saveAdd(){
+async function save(){
+  const action = rowIndex.value ? 'updateFamily' : 'addFamily';
   await fetch(API,{
     method:'POST',
     body:JSON.stringify({
-      action:'addFamily',
-      userId:uid,
-      name:aName.value,
-      phone:aPhone.value,
-      gender:aGender.value,
-      birthday:aBirthday.value,
-      address:aAddress.value,
-      relation:aRelation.value
+      action,
+      rowIndex: rowIndex.value,
+      userId: uid,
+      name: name.value,
+      phone: phone.value,
+      gender: gender.value,
+      birthday: birthday.value,
+      address: address.value,
+      relation: relation.value,
+      identity: identity.value
     })
   });
-  view('member');
+  cancel();
   loadFamily();
 }
 
-function view(v){
-  viewMember.classList.toggle('hidden', v!=='member');
-  viewAdd.classList.toggle('hidden', v!=='add');
+function cancel(){
+  viewMember();
+}
+
+function viewForm(title="新增家人"){
+  view-member.classList.add('hidden');
+  view-form.classList.remove('hidden');
+  formTitle.innerText = title;
+}
+
+function viewMember(){
+  view-form.classList.add('hidden');
+  view-member.classList.remove('hidden');
+  rowIndex.value="";
 }
 
 window.onload = init;
