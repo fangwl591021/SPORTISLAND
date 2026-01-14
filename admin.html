@@ -1,153 +1,239 @@
-<!--
-=====================================================
-檔案名稱：admin.html
-版本：V6.9.0（完整覆蓋版）
-角色：課程後台（讀取 CourseData_Master）
-=====================================================
--->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>運動島管理中心｜Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>運動島｜後台 Slot 編輯器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind（開發版） -->
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
     body {
       font-family: 'Noto Sans TC', sans-serif;
-      background: #F4F5F7;
-      font-size: 15px;
+      background:#F4F5F7;
     }
-    :root {
-      --line: #06C755;
-      --border: #E7E9ED;
+    .btn-line {
+      background:#06C755;
+      color:#fff;
+      font-weight:700;
     }
-    .sidebar {
-      width: 220px;
-      background: #fff;
-      border-right: 1px solid var(--border);
-      height: 100vh;
-      position: fixed;
+    .btn-line:hover { background:#05b94d; }
+    .card {
+      background:#fff;
+      border-radius:16px;
+      border:1px solid #E5E7EB;
     }
-    .sidebar-item {
-      padding: 16px 24px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .sidebar-item.active {
-      background: #F0FBF5;
-      color: var(--line);
-      border-right: 4px solid var(--line);
-    }
+    label { font-weight:700; }
+    .hint-blue { color:#2563eb; font-size:12px; }
   </style>
 </head>
 
-<body class="flex">
+<body class="pb-24">
 
-<!-- Loading -->
-<div id="loading" class="fixed inset-0 bg-white/80 hidden z-50 flex items-center justify-center">
-  <div class="animate-spin h-10 w-10 border-4 border-green-500 border-t-transparent rounded-full"></div>
+<!-- Header -->
+<div class="bg-white shadow sticky top-0 z-10">
+  <div class="max-w-3xl mx-auto p-4 flex justify-between items-center">
+    <h1 class="font-black text-lg">運動島｜Slot 編輯器</h1>
+    <span class="text-sm text-slate-500">Admin 後台</span>
+  </div>
 </div>
 
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="p-6 font-black text-xl text-green-600 border-b">
-    SI MANAGER
-  </div>
-  <div class="sidebar-item active">
-    課程管理
-  </div>
-</aside>
-
 <!-- Main -->
-<main class="ml-[220px] p-10 w-full">
+<div class="max-w-3xl mx-auto p-4 space-y-6">
 
-  <div class="mb-8">
-    <h1 class="text-3xl font-black">課程清單</h1>
-    <p class="text-slate-400 mt-1">
-      資料來源：CourseData_Master
-    </p>
+  <!-- 課程選擇 -->
+  <div class="card p-5">
+    <h2 class="font-black text-lg mb-4">① 選擇課程</h2>
+    <select id="courseSelect" class="w-full p-3 border rounded-xl font-bold">
+      <option value="">請選擇課程</option>
+    </select>
   </div>
 
-  <table class="w-full bg-white border rounded-xl overflow-hidden">
-    <thead class="bg-slate-50 text-slate-500 text-sm">
-      <tr>
-        <th class="p-4 text-left w-32">課程編號</th>
-        <th class="p-4 text-left w-24">類別</th>
-        <th class="p-4 text-left">課程名稱</th>
-        <th class="p-4 text-left w-32">價格</th>
-        <th class="p-4 text-left w-24">名額</th>
-        <th class="p-4 text-left w-24">狀態</th>
-      </tr>
-    </thead>
-    <tbody id="list">
-      <tr>
-        <td colspan="6" class="p-10 text-center text-slate-300">
-          讀取中…
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- Slot 編輯 -->
+  <div class="card p-5 hidden" id="slotEditor">
+    <h2 class="font-black text-lg mb-4">② 編輯 Slot</h2>
 
-</main>
+    <div class="space-y-4">
+
+      <div>
+        <label>日期</label>
+        <input id="slotDate" type="date"
+          class="w-full p-3 border rounded-xl">
+      </div>
+
+      <div>
+        <label>時段</label>
+        <select id="slotPeriod"
+          class="w-full p-3 border rounded-xl font-bold">
+          <option value="full">全日</option>
+          <option value="am">上午</option>
+          <option value="pm">下午</option>
+        </select>
+        <div class="hint-blue">全日 / 上午 / 下午 各自獨立 Slot</div>
+      </div>
+
+      <div>
+        <label>價格</label>
+        <input id="slotPrice" type="number"
+          class="w-full p-3 border rounded-xl"
+          placeholder="例：1200">
+      </div>
+
+      <div>
+        <label>設備租借費</label>
+        <input id="slotEquip" type="number"
+          class="w-full p-3 border rounded-xl"
+          placeholder="例：300">
+      </div>
+
+      <div>
+        <label>請假扣除金額</label>
+        <input id="slotAbsence" type="number"
+          class="w-full p-3 border rounded-xl"
+          placeholder="例：500">
+        <div class="hint-blue">報名後若選擇不出席，系統預扣</div>
+      </div>
+
+      <div>
+        <label>名額</label>
+        <input id="slotLimit" type="number"
+          class="w-full p-3 border rounded-xl"
+          placeholder="例：20">
+      </div>
+
+      <button onclick="saveSlot()"
+        class="w-full py-4 btn-line rounded-2xl text-lg">
+        儲存 Slot
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Slot 列表 -->
+  <div class="card p-5 hidden" id="slotListCard">
+    <h2 class="font-black text-lg mb-4">③ 已建立 Slot</h2>
+    <div id="slotList" class="space-y-3"></div>
+  </div>
+
+</div>
 
 <script>
-const API = "https://sport.wetw-net3.workers.dev/";
-let list = [];
+/* ===============================
+ * API（固定走新 Worker）
+ * =============================== */
+const API = "https://sport-island.fangwl591021.workers.dev";
 
-function showLoading(v){
-  document.getElementById('loading').style.display = v ? 'flex' : 'none';
+let currentCourseId = '';
+let slotList = [];
+
+/* ===============================
+ * 載入課程
+ * =============================== */
+async function loadCourses(){
+  const res = await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ action:'adminGetData' })
+  }).then(r=>r.json());
+
+  const sel = document.getElementById('courseSelect');
+  res.課程.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
 }
 
-async function init(){
-  showLoading(true);
-  try{
-    const res = await fetch(API,{
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ action:'getCourses' })
-    });
+/* ===============================
+ * 課程切換
+ * =============================== */
+document.getElementById('courseSelect').onchange = async e=>{
+  currentCourseId = e.target.value;
+  if(!currentCourseId) return;
 
-    const r = await res.json();
-    list = Array.isArray(r) ? r : (r.success ? r.data : []);
-    render();
-  }catch(err){
-    console.error(err);
-    document.getElementById('list').innerHTML =
-      '<tr><td colspan="6" class="p-10 text-center text-red-400">載入失敗</td></tr>';
+  document.getElementById('slotEditor').classList.remove('hidden');
+  await loadSlots();
+};
+
+/* ===============================
+ * 讀 Slot
+ * =============================== */
+async function loadSlots(){
+  const res = await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ action:'adminGetSlots' })
+  }).then(r=>r.json());
+
+  slotList = (res.data || []).filter(s=>s.courseId===currentCourseId);
+  renderSlotList();
+}
+
+/* ===============================
+ * Slot 列表
+ * =============================== */
+function renderSlotList(){
+  const box = document.getElementById('slotList');
+  box.innerHTML = '';
+
+  slotList.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'border rounded-xl p-3 flex justify-between items-center';
+    div.innerHTML = `
+      <div>
+        <div class="font-black">${s.date}｜${periodText(s.period)}</div>
+        <div class="text-xs text-slate-500">
+          價格 $${s.price} ｜ 設備 $${s.equipFee} ｜ 名額 ${s.limit}
+        </div>
+      </div>
+    `;
+    box.appendChild(div);
+  });
+
+  document.getElementById('slotListCard').classList.remove('hidden');
+}
+
+function periodText(p){
+  return p==='full'?'全日':p==='am'?'上午':'下午';
+}
+
+/* ===============================
+ * 儲存 Slot
+ * =============================== */
+async function saveSlot(){
+  const data = {
+    action:'adminSaveSlot',
+    courseId: currentCourseId,
+    date: document.getElementById('slotDate').value,
+    period: document.getElementById('slotPeriod').value,
+    price: document.getElementById('slotPrice').value,
+    equipFee: document.getElementById('slotEquip').value,
+    absenceDeduct: document.getElementById('slotAbsence').value,
+    limit: document.getElementById('slotLimit').value,
+    status:'開放'
+  };
+
+  const res = await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  }).then(r=>r.json());
+
+  if(res.success){
+    alert('Slot 已儲存');
+    await loadSlots();
+  } else {
+    alert(res.msg || '儲存失敗');
   }
-  showLoading(false);
 }
 
-function render(){
-  const el = document.getElementById('list');
-
-  if(!list.length){
-    el.innerHTML =
-      '<tr><td colspan="6" class="p-10 text-center text-slate-300">尚無課程</td></tr>';
-    return;
-  }
-
-  el.innerHTML = list.map(c => `
-    <tr class="border-t">
-      <td class="p-4 text-xs text-slate-400">${c.id || ''}</td>
-      <td class="p-4">${c.類別 || ''}</td>
-      <td class="p-4 font-bold">${c.名稱 || ''}</td>
-      <td class="p-4">
-        $${Number(c.價格 || 0).toLocaleString()}
-      </td>
-      <td class="p-4">
-        ${c.上限 ?? '-'}
-      </td>
-      <td class="p-4 text-green-600 font-bold">
-        ${c.狀態 || ''}
-      </td>
-    </tr>
-  `).join('');
-}
-
-window.onload = init;
+/* ===============================
+ * Init
+ * =============================== */
+window.onload = loadCourses;
 </script>
 
 </body>
