@@ -1,0 +1,254 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Users, Calendar, ClipboardList, Search, UserPlus, CheckCircle, Clock, MapPin, 
+  Tag as TagIcon, Navigation, Plus, X, Phone, Home, Palmtree, School, HeartPulse,
+  GraduationCap, LogIn, Loader2
+} from 'lucide-react';
+
+/**
+ * ------------------------------------------------------------------
+ * 【核心配置區】
+ * ------------------------------------------------------------------
+ */
+
+// 1. 您的 LIFF ID
+const LIFF_ID = "2008792551-4RpmRRyn"; 
+
+// 2. 【已填入】您的 Cloudflare Worker 網址
+// 這是您剛產生的中繼站，負責將資料轉發到 Google Sheets
+const WORKER_API_URL = "https://sport-island.fangwl591021.workers.dev/"; 
+
+/**
+ * ------------------------------------------------------------------
+ */
+
+const INITIAL_COURSES = [
+  { id: 'zb1', location: '竹北體能館', name: '平日課後班-直排輪', instructor: '教練A', weekday: '星期三', time: '16:30 - 18:00', capacity: 10, current: 4, price: 600, category: '直排輪', ageGroup: '中班～12歲', session: '平日課後' },
+  { id: 'dc1', location: '新竹迪卡儂', name: '週一籃球班', instructor: '教練G', weekday: '星期一', time: '19:00 - 20:00', capacity: 15, current: 7, price: 700, category: '籃球', ageGroup: '大班～12歲', session: '平日' },
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('courses');
+  const [courses] = useState(INITIAL_COURSES);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const [liffProfile, setLiffProfile] = useState(null);
+  const [isLiffInit, setIsLiffInit] = useState(false);
+  const [registerModal, setRegisterModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '', gender: '', birthday: '', phone: '', address: '',
+    relationship: '本人', identity: '一般', school: '', grade: '',
+    healthStatus: '無', healthDescription: ''
+  });
+
+  useEffect(() => {
+    const initLiff = async () => {
+      try {
+        const script = document.createElement('script');
+        script.src = "https://static.line-scdn.net/liff/edge/2/sdk.js";
+        script.async = true;
+        script.onload = async () => {
+          await window.liff.init({ liffId: LIFF_ID });
+          setIsLiffInit(true);
+          if (window.liff.isLoggedIn()) {
+            const profile = await window.liff.getProfile();
+            setLiffProfile(profile);
+            setFormData(prev => ({ ...prev, name: profile.displayName }));
+          }
+        };
+        document.head.appendChild(script);
+      } catch (err) {
+        console.error("LIFF 初始化失敗", err);
+      }
+    };
+    initLiff();
+  }, []);
+
+  const handleLineLogin = () => {
+    if (!window.liff.isLoggedIn()) window.liff.login();
+  };
+
+  const handleLineLogout = () => {
+    window.liff.logout();
+    setLiffProfile(null);
+    window.location.reload();
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    if (!liffProfile) return alert('請先登入 LINE');
+    if (!formData.name || !formData.phone) return alert('請填寫必填欄位');
+
+    setIsSubmitting(true);
+    
+    const payload = {
+      timestamp: new Date().toLocaleString('zh-TW'),
+      lineUserId: liffProfile.userId,
+      lineDisplayName: liffProfile.displayName,
+      ...formData
+    };
+
+    try {
+      const response = await fetch(WORKER_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Worker 回應異常');
+
+      alert('🎉 註冊成功！資料已寫入 Google 試算表。');
+      setRegisterModal(false);
+    } catch (err) {
+      alert('同步失敗，請確認 Worker 的 GAS_URL 環境變數是否正確。');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredCourses = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return courses.filter(c => 
+      c.name.toLowerCase().includes(term) || c.location.toLowerCase().includes(term)
+    );
+  }, [courses, searchTerm]);
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24 md:pb-0">
+      
+      {/* 導覽列 */}
+      <nav className="bg-white/90 border-b border-slate-100 sticky top-0 z-40 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 h-24 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-2xl mr-4 bg-cyan-50 flex items-center justify-center text-cyan-600 shadow-xl shadow-cyan-100/50">
+              <Palmtree size={28} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-black text-slate-800 leading-none">運動島 <span className="text-cyan-600">數位島民</span></span>
+              <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Digital Island Member System</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {liffProfile ? (
+              <div className="flex items-center bg-slate-50 p-1.5 rounded-full pr-4 border border-slate-200">
+                <img src={liffProfile.pictureUrl} alt="avatar" className="w-8 h-8 rounded-full border border-white shadow-sm mr-2" />
+                <span className="text-xs font-black text-slate-700 mr-3 hidden sm:inline">{liffProfile.displayName}</span>
+                <button onClick={handleLineLogout} className="text-[10px] font-bold text-red-400">登出</button>
+              </div>
+            ) : (
+              <button onClick={handleLineLogin} className="bg-[#06C755] text-white px-5 py-2.5 rounded-2xl font-black text-sm flex items-center gap-2">
+                <LogIn className="w-4 h-4" /> LINE 登入
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* 主內容區 */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row gap-6 mb-12">
+          <div className="relative flex-1">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+            <input 
+              type="text" 
+              placeholder="搜尋感興趣的課程..." 
+              className="w-full pl-16 pr-6 py-5 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm font-bold outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={() => liffProfile ? setRegisterModal(true) : handleLineLogin()}
+            className="px-10 py-5 bg-slate-900 text-white rounded-[2.5rem] font-black shadow-2xl flex items-center justify-center gap-2"
+          >
+            <UserPlus className="w-5 h-5" /> 註冊島民資料
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10">
+          {filteredCourses.map(course => (
+            <div key={course.id} className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm hover:shadow-2xl transition-all flex flex-col group border-b-8 border-b-slate-100 hover:border-b-cyan-500">
+              <div className="flex gap-2 mb-6">
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black">{course.location}</span>
+                <span className="px-3 py-1 bg-cyan-50 text-cyan-600 rounded-lg text-[10px] font-black">{course.category}</span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 mb-6 group-hover:text-cyan-600">{course.name}</h3>
+              <div className="space-y-3 mb-10 text-slate-400 text-sm font-bold">
+                <div className="flex items-center"><Calendar className="w-4 h-4 mr-3 text-cyan-500" /> {course.weekday}</div>
+                <div className="flex items-center"><Clock className="w-4 h-4 mr-3 text-cyan-500" /> {course.time}</div>
+              </div>
+              <button className="mt-auto w-full py-5 bg-slate-50 text-slate-900 rounded-2xl font-black hover:bg-slate-900 hover:text-white transition-all">
+                課程詳情 · ${course.price}
+              </button>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* 註冊 Modal */}
+      {registerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+          <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl my-8">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-[3rem] z-10">
+              <h3 className="text-2xl font-black text-slate-800">島民資料登記</h3>
+              <button onClick={() => setRegisterModal(false)} className="p-2 bg-slate-50 text-slate-400 rounded-full"><X /></button>
+            </div>
+            
+            <form onSubmit={handleRegisterSubmit} className="p-8 space-y-6">
+              <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center gap-4">
+                <img src={liffProfile?.pictureUrl} className="w-12 h-12 rounded-full border-2 border-white shadow-sm" alt="line" />
+                <div>
+                  <div className="text-[10px] font-black text-cyan-600 uppercase">LINE 已連線</div>
+                  <div className="text-sm font-bold text-slate-700">{liffProfile?.displayName}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">姓名</label>
+                  <input required className="w-full px-5 py-4 bg-slate-50 border rounded-2xl font-bold outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">性別</label>
+                  <select required className="w-full px-5 py-4 bg-slate-50 border rounded-2xl font-bold" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
+                    <option value="">請選擇</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                  </select>
+                </div>
+              </div>
+
+              <input required type="tel" placeholder="家長手機電話" className="w-full px-5 py-4 bg-slate-50 border rounded-2xl font-bold outline-none" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <input placeholder="就讀學校" className="px-5 py-4 bg-slate-50 border rounded-2xl font-bold outline-none" value={formData.school} onChange={e => setFormData({...formData, school: e.target.value})} />
+                <input placeholder="目前年級" className="px-5 py-4 bg-slate-50 border rounded-2xl font-bold outline-none" value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})} />
+              </div>
+
+              <div className="p-5 bg-slate-50 rounded-[2.5rem] border">
+                <label className="text-xs font-black text-slate-400 uppercase mb-4 block text-center flex items-center justify-center gap-2"><HeartPulse className="w-4 h-4" /> 身體狀況</label>
+                <div className="flex gap-2">
+                  {['無', '有'].map(s => (
+                    <button key={s} type="button" onClick={() => setFormData({...formData, healthStatus: s})} className={`flex-1 py-4 rounded-2xl font-black transition-all ${formData.healthStatus === s ? s === '有' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}>{s}</button>
+                  ))}
+                </div>
+                {formData.healthStatus === '有' && <textarea required placeholder="詳述狀況..." className="w-full mt-4 p-4 border rounded-2xl font-bold text-sm min-h-[100px]" value={formData.healthDescription} onChange={e => setFormData({...formData, healthDescription: e.target.value})} />}
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className={`w-full py-6 rounded-[2rem] font-black text-lg shadow-xl transition-all ${isSubmitting ? 'bg-slate-200 text-slate-400' : 'bg-slate-900 text-white shadow-slate-200 hover:bg-cyan-600'}`}
+              >
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : '確認註冊並同步'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
