@@ -1,240 +1,141 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>運動島｜後台 Slot 編輯器</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>LINE 訊息管理後台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Tailwind（開發版） -->
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- LINE OA Style Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
     body {
       font-family: 'Noto Sans TC', sans-serif;
-      background:#F4F5F7;
+      background-color: #f7f8fa;
     }
-    .btn-line {
-      background:#06C755;
-      color:#fff;
-      font-weight:700;
-    }
-    .btn-line:hover { background:#05b94d; }
-    .card {
-      background:#fff;
-      border-radius:16px;
-      border:1px solid #E5E7EB;
-    }
-    label { font-weight:700; }
-    .hint-blue { color:#2563eb; font-size:12px; }
   </style>
 </head>
 
-<body class="pb-24">
+<body class="h-screen overflow-hidden">
 
-<!-- Header -->
-<div class="bg-white shadow sticky top-0 z-10">
-  <div class="max-w-3xl mx-auto p-4 flex justify-between items-center">
-    <h1 class="font-black text-lg">運動島｜Slot 編輯器</h1>
-    <span class="text-sm text-slate-500">Admin 後台</span>
-  </div>
-</div>
+<div class="flex h-full">
 
-<!-- Main -->
-<div class="max-w-3xl mx-auto p-4 space-y-6">
-
-  <!-- 課程選擇 -->
-  <div class="card p-5">
-    <h2 class="font-black text-lg mb-4">① 選擇課程</h2>
-    <select id="courseSelect" class="w-full p-3 border rounded-xl font-bold">
-      <option value="">請選擇課程</option>
-    </select>
-  </div>
-
-  <!-- Slot 編輯 -->
-  <div class="card p-5 hidden" id="slotEditor">
-    <h2 class="font-black text-lg mb-4">② 編輯 Slot</h2>
-
-    <div class="space-y-4">
-
-      <div>
-        <label>日期</label>
-        <input id="slotDate" type="date"
-          class="w-full p-3 border rounded-xl">
-      </div>
-
-      <div>
-        <label>時段</label>
-        <select id="slotPeriod"
-          class="w-full p-3 border rounded-xl font-bold">
-          <option value="full">全日</option>
-          <option value="am">上午</option>
-          <option value="pm">下午</option>
-        </select>
-        <div class="hint-blue">全日 / 上午 / 下午 各自獨立 Slot</div>
-      </div>
-
-      <div>
-        <label>價格</label>
-        <input id="slotPrice" type="number"
-          class="w-full p-3 border rounded-xl"
-          placeholder="例：1200">
-      </div>
-
-      <div>
-        <label>設備租借費</label>
-        <input id="slotEquip" type="number"
-          class="w-full p-3 border rounded-xl"
-          placeholder="例：300">
-      </div>
-
-      <div>
-        <label>請假扣除金額</label>
-        <input id="slotAbsence" type="number"
-          class="w-full p-3 border rounded-xl"
-          placeholder="例：500">
-        <div class="hint-blue">報名後若選擇不出席，系統預扣</div>
-      </div>
-
-      <div>
-        <label>名額</label>
-        <input id="slotLimit" type="number"
-          class="w-full p-3 border rounded-xl"
-          placeholder="例：20">
-      </div>
-
-      <button onclick="saveSlot()"
-        class="w-full py-4 btn-line rounded-2xl text-lg">
-        儲存 Slot
-      </button>
-
+  <!-- Sidebar -->
+  <aside class="w-60 bg-white border-r border-gray-200 flex flex-col">
+    <div class="px-4 py-4 border-b">
+      <div class="text-lg font-bold text-green-600">LINE OA 後台</div>
+      <div class="text-xs text-gray-500">Message Admin</div>
     </div>
-  </div>
 
-  <!-- Slot 列表 -->
-  <div class="card p-5 hidden" id="slotListCard">
-    <h2 class="font-black text-lg mb-4">③ 已建立 Slot</h2>
-    <div id="slotList" class="space-y-3"></div>
-  </div>
+    <nav class="flex-1 px-2 py-4 space-y-1 text-sm">
+      <a class="flex items-center px-3 py-2 rounded-lg bg-green-50 text-green-700 font-medium" href="#">
+        🏠 總覽
+      </a>
 
-</div>
+      <div class="mt-3 text-xs text-gray-400 px-3">訊息管理</div>
+      <a class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-100" href="#">
+        💬 多頁訊息
+      </a>
+      <a class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-100" href="#">
+        🧩 Flex 卡片
+      </a>
 
-<script>
-/* ===============================
- * API（固定走新 Worker）
- * =============================== */
-const API = "https://sport-island.fangwl591021.workers.dev";
+      <div class="mt-3 text-xs text-gray-400 px-3">資料</div>
+      <a class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-100" href="#">
+        👥 加入者
+      </a>
+      <a class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-100" href="#">
+        🎨 卡片內容
+      </a>
 
-let currentCourseId = '';
-let slotList = [];
+      <div class="mt-3 text-xs text-gray-400 px-3">系統</div>
+      <a class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-100" href="#">
+        ⚙️ 設定
+      </a>
+    </nav>
+  </aside>
 
-/* ===============================
- * 載入課程
- * =============================== */
-async function loadCourses(){
-  const res = await fetch(API,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ action:'adminGetData' })
-  }).then(r=>r.json());
+  <!-- Main Content -->
+  <main class="flex-1 flex overflow-hidden">
 
-  const sel = document.getElementById('courseSelect');
-  res.課程.forEach(c=>{
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
-    sel.appendChild(opt);
-  });
-}
+    <!-- Center Content -->
+    <section class="flex-1 overflow-y-auto p-6">
 
-/* ===============================
- * 課程切換
- * =============================== */
-document.getElementById('courseSelect').onchange = async e=>{
-  currentCourseId = e.target.value;
-  if(!currentCourseId) return;
+      <!-- Page Header -->
+      <div class="mb-6">
+        <h1 class="text-xl font-semibold">總覽</h1>
+        <p class="text-sm text-gray-500">官方帳號訊息與卡片使用狀態</p>
+      </div>
 
-  document.getElementById('slotEditor').classList.remove('hidden');
-  await loadSlots();
-};
-
-/* ===============================
- * 讀 Slot
- * =============================== */
-async function loadSlots(){
-  const res = await fetch(API,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ action:'adminGetSlots' })
-  }).then(r=>r.json());
-
-  slotList = (res.data || []).filter(s=>s.courseId===currentCourseId);
-  renderSlotList();
-}
-
-/* ===============================
- * Slot 列表
- * =============================== */
-function renderSlotList(){
-  const box = document.getElementById('slotList');
-  box.innerHTML = '';
-
-  slotList.forEach(s=>{
-    const div = document.createElement('div');
-    div.className = 'border rounded-xl p-3 flex justify-between items-center';
-    div.innerHTML = `
-      <div>
-        <div class="font-black">${s.date}｜${periodText(s.period)}</div>
-        <div class="text-xs text-slate-500">
-          價格 $${s.price} ｜ 設備 $${s.equipFee} ｜ 名額 ${s.limit}
+      <!-- Stats -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-4 border">
+          <div class="text-sm text-gray-500">今日新增好友</div>
+          <div class="text-2xl font-bold mt-1">12</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 border">
+          <div class="text-sm text-gray-500">已建檔加入者</div>
+          <div class="text-2xl font-bold mt-1">286</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 border">
+          <div class="text-sm text-gray-500">Flex 卡片</div>
+          <div class="text-2xl font-bold mt-1">3</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 border">
+          <div class="text-sm text-gray-500">觸發關鍵字</div>
+          <div class="text-2xl font-bold mt-1">1</div>
         </div>
       </div>
-    `;
-    box.appendChild(div);
-  });
 
-  document.getElementById('slotListCard').classList.remove('hidden');
-}
+      <!-- Recent Activity -->
+      <div class="bg-white rounded-xl border">
+        <div class="px-4 py-3 border-b font-medium">
+          最近互動紀錄
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500">
+            <tr>
+              <th class="text-left px-4 py-2">加入者</th>
+              <th class="text-left px-4 py-2">事件</th>
+              <th class="text-left px-4 py-2">時間</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-t">
+              <td class="px-4 py-2">Tony</td>
+              <td class="px-4 py-2">索取名片</td>
+              <td class="px-4 py-2">2026/01/19 10:32</td>
+            </tr>
+            <tr class="border-t">
+              <td class="px-4 py-2">User A</td>
+              <td class="px-4 py-2">加入好友</td>
+              <td class="px-4 py-2">2026/01/19 10:21</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-function periodText(p){
-  return p==='full'?'全日':p==='am'?'上午':'下午';
-}
+    </section>
 
-/* ===============================
- * 儲存 Slot
- * =============================== */
-async function saveSlot(){
-  const data = {
-    action:'adminSaveSlot',
-    courseId: currentCourseId,
-    date: document.getElementById('slotDate').value,
-    period: document.getElementById('slotPeriod').value,
-    price: document.getElementById('slotPrice').value,
-    equipFee: document.getElementById('slotEquip').value,
-    absenceDeduct: document.getElementById('slotAbsence').value,
-    limit: document.getElementById('slotLimit').value,
-    status:'開放'
-  };
+    <!-- Right Preview -->
+    <aside class="w-80 bg-gray-100 border-l p-4 hidden lg:block">
+      <div class="text-sm font-medium mb-3">手機預覽</div>
 
-  const res = await fetch(API,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(data)
-  }).then(r=>r.json());
+      <div class="mx-auto bg-white rounded-2xl shadow w-[260px] h-[520px] overflow-hidden border">
+        <div class="bg-green-600 text-white text-center py-2 text-sm">
+          LINE 預覽
+        </div>
+        <div class="p-3 text-sm text-gray-500">
+          選擇訊息或卡片以預覽
+        </div>
+      </div>
+    </aside>
 
-  if(res.success){
-    alert('Slot 已儲存');
-    await loadSlots();
-  } else {
-    alert(res.msg || '儲存失敗');
-  }
-}
-
-/* ===============================
- * Init
- * =============================== */
-window.onload = loadCourses;
-</script>
+  </main>
+</div>
 
 </body>
 </html>
